@@ -3,10 +3,8 @@ import sys
 
 from alembic import context
 from logging.config import fileConfig
-from sqlalchemy import engine_from_config, pool
+from sqlalchemy import engine_from_config, pool, text
 
-from public_transport_watcher.db.base import Base
-from public_transport_watcher.db.connection import create_schemas
 from public_transport_watcher.db.models import *
 from public_transport_watcher.utils import get_credentials
 
@@ -49,31 +47,29 @@ def run_migrations_offline() -> None:
         context.run_migrations()
 
 
-def run_migrations_online() -> None:
-    """Run migrations in 'online' mode.
-
-    In this scenario we need to create an Engine
-    and associate a connection with the context.
-
-    """
+def run_migrations_online():
+    """Run migrations in 'online' mode."""
     connectable = engine_from_config(
-        config.get_section(config.config_ini_section, {}),
+        config.get_section(config.config_ini_section),
         prefix="sqlalchemy.",
         poolclass=pool.NullPool,
     )
 
     with connectable.connect() as connection:
-        create_schemas(connectable)
+        connection.execute(text("CREATE SCHEMA IF NOT EXISTS public"))
+        connection.commit()
+
+        schemas = ["transport", "pollution", "geography", "weather"]
+        for schema in schemas:
+            connection.execute(text(f"CREATE SCHEMA IF NOT EXISTS {schema}"))
+        connection.commit()
 
         context.configure(
             connection=connection,
             target_metadata=target_metadata,
-            include_schemas=True,  # Important for multiple schemas
-            include_object=lambda obj,
-            name,
-            type_,
-            reflected,
-            compare_to: True,  # Include all the models
+            include_schemas=True,
+            include_object=lambda obj, name, type_, reflected, compare_to: True,
+            version_table_schema="public",
         )
 
         with context.begin_transaction():
