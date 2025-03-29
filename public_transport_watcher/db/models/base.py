@@ -15,4 +15,3 @@ class StationBase:
     name = Column(String, nullable=False)
     longitude = Column(Float, nullable=True)
     latitude = Column(Float, nullable=True)
-    wording = Column(String, nullable=True)

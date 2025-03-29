@@ -15,6 +15,8 @@ class TransportTimeBin(Base, TimeBinBase):
     __tablename__ = "time_bin"
     __table_args__ = {"schema": transport_schema}
 
+    cat_day = Column(String, nullable=True)
+
     traffic_data = relationship("Traffic", back_populates="time_bin")
 
 

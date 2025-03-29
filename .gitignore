@@ -121,6 +121,9 @@ ENV/
 env.bak/
 venv.bak/
 
+# Local stuff
+sandbox
+
 # Spyder project settings
 .spyderproject
 .spyproject
