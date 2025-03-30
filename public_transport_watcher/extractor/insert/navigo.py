@@ -70,9 +70,7 @@ def insert_navigo_data(df: pd.DataFrame) -> None:
             bin_key = record.pop("bin_key")
             record["time_bin_id"] = time_bins_dict[bin_key]
 
-        traffic_added = _bulk_process_traffic(
-            session, traffic_records, bulk_size=1000
-        )
+        traffic_added = _bulk_process_traffic(session, traffic_records, bulk_size=1000)
 
         session.commit()
 
