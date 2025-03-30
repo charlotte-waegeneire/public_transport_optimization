@@ -123,6 +123,7 @@ venv.bak/
 
 # Local stuff
 sandbox
+logs
 
 # Spyder project settings
 .spyderproject

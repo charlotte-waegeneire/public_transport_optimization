@@ -25,3 +25,25 @@ from public_transport_watcher.db.models.weather import (
     WeatherTimeBin,
     WeatherMeasure,
 )
+
+__all__ = [
+    "Base",
+    "TransportStation",
+    "TransportTimeBin",
+    "Transport",
+    "Categ",
+    "Schedule",
+    "Traffic",
+    "PollutionStation",
+    "PollutionTimeBin",
+    "Measure",
+    "Unity",
+    "Sensor",
+    "Street",
+    "Address",
+    "Parking",
+    "Monument",
+    "WeatherStation",
+    "WeatherTimeBin",
+    "WeatherMeasure",
+]

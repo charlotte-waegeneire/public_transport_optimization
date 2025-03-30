@@ -1,5 +1,6 @@
 from sqlalchemy import Column, Integer, Float, ForeignKey
 from sqlalchemy.orm import relationship
+
 from public_transport_watcher.db.models.base import Base, TimeBinBase, StationBase
 
 weather_schema = "weather"

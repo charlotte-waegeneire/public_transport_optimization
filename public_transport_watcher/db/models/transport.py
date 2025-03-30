@@ -1,6 +1,8 @@
-from sqlalchemy import Column, Integer, String, DateTime, ForeignKey, MetaData
+from sqlalchemy import Column, DateTime, Enum, ForeignKey, Integer, MetaData, String
 from sqlalchemy.orm import relationship
-from public_transport_watcher.db.models.base import Base, TimeBinBase, StationBase
+
+from public_transport_watcher.db.models.base import Base, StationBase, TimeBinBase
+from public_transport_watcher.db.models.enums import DayCategoryEnum
 
 transport_schema = "transport"
 metadata = MetaData(schema=transport_schema)
@@ -15,7 +17,7 @@ class TransportTimeBin(Base, TimeBinBase):
     __tablename__ = "time_bin"
     __table_args__ = {"schema": transport_schema}
 
-    cat_day = Column(String, nullable=True)
+    cat_day = Column(Enum(DayCategoryEnum), nullable=True)
 
     traffic_data = relationship("Traffic", back_populates="time_bin")
 
@@ -75,6 +77,5 @@ class Traffic(Base):
     )
     validations = Column(Integer, nullable=True)
 
-    # Relations
     station = relationship("TransportStation", back_populates="traffic_data")
     time_bin = relationship("TransportTimeBin", back_populates="traffic_data")

@@ -1,18 +1,19 @@
-import pandas as pd
-from sqlalchemy import select
-from sqlalchemy.orm import sessionmaker
-import logging
 from typing import Tuple
 from datetime import datetime
 
-from public_transport_watcher.utils import get_engine
+import pandas as pd
+from sqlalchemy import select
+from sqlalchemy.orm import sessionmaker
+
 from public_transport_watcher.db.models.transport import (
     TransportStation,
     TransportTimeBin,
     Traffic,
 )
+from public_transport_watcher.logging_config import configure_logging
+from public_transport_watcher.utils import get_engine
 
-logger = logging.getLogger(__name__)
+logger = configure_logging()
 
 
 def insert_navigo_data(df: pd.DataFrame) -> None:
@@ -68,7 +69,6 @@ def insert_navigo_data(df: pd.DataFrame) -> None:
                 logger.debug(f"Row data: {row}")
                 continue
 
-        # Commit all changes at once
         session.commit()
 
         logger.info(

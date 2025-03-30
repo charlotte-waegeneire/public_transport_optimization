@@ -1,11 +1,13 @@
+from typing import Dict, List, Tuple, Union
+
 import pandas as pd
-from typing import Dict, List, Union, Tuple
-import logging
 
-from public_transport_watcher.utils import get_datalake_file
 from public_transport_watcher.extractor.insert import insert_navigo_data
+from public_transport_watcher.logging_config import configure_logging
+from public_transport_watcher.utils import get_datalake_file
 
-logger = logging.getLogger(__name__)
+
+logger = configure_logging()
 
 
 def extract_navigo_validations(config: Dict, batch_size: int) -> None:
@@ -19,8 +21,18 @@ def extract_navigo_validations(config: Dict, batch_size: int) -> None:
     batch_size : int
         Number of records to process at once.
     """
+    failures = []
     for year, periods in config.items():
-        _process_year_data(year, periods, batch_size)
+        try:
+            _process_year_data(year, periods, batch_size)
+        except Exception as e:
+            logger.error(f"Failed to process year {year}: {str(e)}")
+            failures.append(year)
+
+    if failures:
+        logger.warning(f"Failed to process data for years: {failures}")
+    else:
+        logger.info("Successfully processed all years")
 
 
 def _process_year_data(
@@ -56,8 +68,12 @@ def _process_period_data(year: int, period: str, batch_size: int) -> None:
 
         logger.info(f"Processing data for {year}/{period}")
 
-        # Load entire profiles data into memory as it's smaller
-        profiles_df = pd.read_csv(profiles_file, sep=";")
+        try:
+            profiles_df = pd.read_csv(profiles_file, sep=";")
+        except Exception as e:
+            logger.error(f"Error loading profiles file: {str(e)}")
+            return
+
         profiles_df.columns = profiles_df.columns.str.lower()
         profiles_df = profiles_df.rename(columns={"cat_jour": "cat_day"})
         profiles_df = profiles_df[profiles_df["trnc_horr_60"] != "ND"]
@@ -99,15 +115,17 @@ def _process_period_data(year: int, period: str, batch_size: int) -> None:
 
 def _find_file_types(files: List[str]) -> Tuple[str, str]:
     validations_file = None
-    profiles_file = None
+    profils_file = None
 
     for file in files:
-        if "validations" in file.lower():
+        if "validations.csv" in file.lower():
             validations_file = file
-        elif "profils" in file.lower() or "profiles" in file.lower():
-            profiles_file = file
+            continue
+        if "profils.csv" in file.lower() or "profils" in file.lower():
+            profils_file = file
+            continue
 
-    return validations_file, profiles_file
+    return validations_file, profils_file
 
 
 def _compute_hourly_validations(

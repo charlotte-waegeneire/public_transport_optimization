@@ -11,9 +11,10 @@ MR #2
 ### Added
 - Navigo validations data ingestion
 - Utils function to get the credentials, datalake files and engine
+- Logging configuration
 
 ### Changed
-- Time bin delta to include the type of day for transport data
+- Time bin table to include the type of day for transport data
 - Station base table to remove the "wording" column
 
 ## [0.1.0] - 2025-03-23

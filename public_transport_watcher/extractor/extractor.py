@@ -1,6 +1,5 @@
-from public_transport_watcher.extractor.extract import extract_navigo_validations
-
 from public_transport_watcher.extractor.configuration import EXTRACTION_CONFIG
+from public_transport_watcher.extractor.extract import extract_navigo_validations
 
 
 class Extractor:
