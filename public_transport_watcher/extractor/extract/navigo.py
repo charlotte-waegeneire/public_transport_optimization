@@ -4,11 +4,11 @@ import pandas as pd
 
 from public_transport_watcher.extractor.configuration import COLUMN_MAPPING
 from public_transport_watcher.extractor.insert import insert_navigo_data
-from public_transport_watcher.logging_config import configure_logging
+from public_transport_watcher.logging_config import get_logger
 from public_transport_watcher.utils import get_datalake_file
 
 
-logger = configure_logging()
+logger = get_logger()
 
 _COLUMN_MAPPING = COLUMN_MAPPING["navigo"]
 

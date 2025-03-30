@@ -11,10 +11,10 @@ from public_transport_watcher.db.models.transport import (
     TransportTimeBin,
     Traffic,
 )
-from public_transport_watcher.logging_config import configure_logging
+from public_transport_watcher.logging_config import get_logger
 from public_transport_watcher.utils import get_engine
 
-logger = configure_logging()
+logger = get_logger()
 
 
 def insert_navigo_data(df: pd.DataFrame) -> None:

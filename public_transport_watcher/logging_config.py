@@ -8,9 +8,9 @@ LOG_FILE = os.path.join(LOG_DIR, "transport_watcher.log")
 
 os.makedirs(LOG_DIR, exist_ok=True)
 
-
-def configure_logging():
-    logger = logging.getLogger("public_transport_watcher")
+# Configure logger once at module level
+logger = logging.getLogger("public_transport_watcher")
+if not logger.handlers:  # Only configure if not already done
     logger.setLevel(logging.DEBUG)
 
     console_handler = logging.StreamHandler(sys.stdout)
@@ -30,4 +30,6 @@ def configure_logging():
     logger.addHandler(console_handler)
     logger.addHandler(file_handler)
 
+def get_logger():
+    """Get the pre-configured logger."""
     return logger
