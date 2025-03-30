@@ -1,5 +1,5 @@
 EXTRACTION_CONFIG = {
-    "batch_size": 1000,
+    "batch_size": 50000,
     "navigo": {
         2022: ["s1", "s2"],
         2023: ["s1", "s2"],
