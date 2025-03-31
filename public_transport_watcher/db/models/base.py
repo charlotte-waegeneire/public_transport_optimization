@@ -1,4 +1,4 @@
-from sqlalchemy import Column, Integer, DateTime, String, Float
+from sqlalchemy import Column, DateTime, Float, Integer, String
 from sqlalchemy.ext.declarative import declarative_base
 
 Base = declarative_base()
@@ -15,4 +15,3 @@ class StationBase:
     name = Column(String, nullable=False)
     longitude = Column(Float, nullable=True)
     latitude = Column(Float, nullable=True)
-    wording = Column(String, nullable=True)
