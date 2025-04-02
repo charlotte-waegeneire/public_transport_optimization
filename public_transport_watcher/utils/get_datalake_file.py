@@ -7,7 +7,9 @@ env_path = Path(__file__).parent.parent.parent / ".env"
 load_dotenv(dotenv_path=env_path)
 
 
-def get_datalake_file(data_category: str, year: int, subfolder: str) -> list[str]:
+def get_datalake_file(
+    data_category: str, folder: str, subfolder: str = None
+) -> list[str]:
     """
     Get the files path for a given data category and subfolder in the datalake.
 
@@ -15,16 +17,27 @@ def get_datalake_file(data_category: str, year: int, subfolder: str) -> list[str
     ----------
     data_category : str
         The category of data (e.g., "weather", "pollution").
-    year : int
-        The year of the data.
+    folder : str
+        The folder within the data category.
     subfolder : str
         The subfolder within the data category.
+
+    Returns
+    -------
+    list[str]
+        A list of file paths within the specified folder and subfolder.
     """
     datalake_root = os.getenv("DATALAKE_ROOT")
     if not datalake_root:
         raise ValueError("DATALAKE_ROOT environment variable is not set.")
 
-    data_path = os.path.join(datalake_root, data_category, str(year), subfolder)
+    if not data_category or not folder:
+        raise ValueError("Both data_category and folder must be provided.")
+
+    data_path = os.path.join(datalake_root, data_category, str(folder))
+    if subfolder:
+        data_path = os.path.join(data_path, str(subfolder))
+
     if not os.path.exists(data_path):
         raise FileNotFoundError(f"The path {data_path} does not exist.")
 

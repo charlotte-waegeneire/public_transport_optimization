@@ -30,6 +30,7 @@ if not logger.handlers:  # Only configure if not already done
     logger.addHandler(console_handler)
     logger.addHandler(file_handler)
 
+
 def get_logger():
     """Get the pre-configured logger."""
     return logger
