@@ -10,4 +10,7 @@ EXTRACTION_CONFIG = {
     "stations": {
         "batch_size": 100,
     },
+    "addresses": {
+        "batch_size": 1000,
+    },
 }

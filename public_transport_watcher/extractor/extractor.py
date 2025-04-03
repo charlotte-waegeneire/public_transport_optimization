@@ -1,5 +1,6 @@
 from public_transport_watcher.extractor.configuration import EXTRACTION_CONFIG
 from public_transport_watcher.extractor.extract import (
+    extract_addresses_informations,
     extract_navigo_validations,
     extract_stations_informations,
 )
@@ -27,8 +28,14 @@ class Extractor:
             return
         extract_navigo_validations(config)
 
+    def extract_addresses_informations(self):
+        config = self.extract_config.get("addresses", {})
+        batch_size = config.get("batch_size", 1000)
+        extract_addresses_informations(batch_size)
+
 
 if __name__ == "__main__":
     extractor = Extractor()
     extractor.extract_stations_data()
-    # extractor.extract_navigo_validations()
+    extractor.extract_navigo_validations()
+    extractor.extract_addresses_informations()

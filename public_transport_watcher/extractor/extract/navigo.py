@@ -24,6 +24,8 @@ def extract_navigo_validations(config: Dict) -> None:
     batch_size : int
         Number of records to process at once.
     """
+    logger.info("Extracting Navigo validations")
+
     files_config = config["files"]
     batch_size = config["batch_size"]
 
