@@ -38,7 +38,6 @@ def extract_stations_informations(batch_size: int = 100):
         )
         stations_df = stations_df.drop(columns=["Geo Point"])
 
-        # Filter only metro stations
         stations_df = stations_df[stations_df["mode"] == "METRO"]
         metro_count = len(stations_df)
         logger.info(
