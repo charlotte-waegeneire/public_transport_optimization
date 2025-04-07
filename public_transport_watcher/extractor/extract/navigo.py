@@ -13,7 +13,7 @@ logger = get_logger()
 _COLUMN_MAPPING = COLUMN_MAPPING["navigo"]
 
 
-def extract_navigo_validations(config: Dict, batch_size: int) -> None:
+def extract_navigo_validations(config: Dict) -> None:
     """
     Extract and process Navigo validations for all configured time periods.
 
@@ -24,8 +24,19 @@ def extract_navigo_validations(config: Dict, batch_size: int) -> None:
     batch_size : int
         Number of records to process at once.
     """
+    logger.info("Extracting Navigo validations")
+
+    files_config = config["files"]
+    batch_size = config["batch_size"]
+
+    if not files_config:
+        logger.error(
+            "No files configuration provided for Navigo validations extraction."
+        )
+        return
+
     failures = []
-    for year, periods in config.items():
+    for year, periods in files_config.items():
         try:
             _process_year_data(year, periods, batch_size)
         except Exception as e:
