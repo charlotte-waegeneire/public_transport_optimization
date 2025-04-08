@@ -10,7 +10,7 @@ MR #3
 
 ### Added
 - Functions to fetch data from an API
-- Export traffic data to CSV
+- Import traffic data
 
 ## [0.3.0] - 2025-04-02
 MR #4
