@@ -3,6 +3,7 @@ from public_transport_watcher.extractor.extract import (
     extract_addresses_informations,
     extract_navigo_validations,
     extract_stations_informations,
+    process_traffic_data,
 )
 from public_transport_watcher.utils import get_query_result
 
@@ -33,9 +34,13 @@ class Extractor:
         batch_size = config.get("batch_size", 1000)
         extract_addresses_informations(batch_size)
 
+    def extract_traffic_data(self):
+        return process_traffic_data()
+
 
 if __name__ == "__main__":
     extractor = Extractor()
     extractor.extract_stations_data()
     extractor.extract_navigo_validations()
     extractor.extract_addresses_informations()
+    traffic_data = extractor.extract_traffic_data()
