@@ -12,6 +12,17 @@ MR #3
 - Functions to fetch data from an API
 - Export traffic data to CSV
 
+## [0.3.0] - 2025-04-02
+MR #4
+
+### Added
+- Stations extraction
+- Utility function to execute a `SELECT` query and return the result
+
+### Changed
+- The datalake file retriever function to accept only one folder in the path
+- Extraction configuration setup
+
 ## [0.2.0] - 2025-03-29
 MR #2
 

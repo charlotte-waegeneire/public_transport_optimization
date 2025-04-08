@@ -11,7 +11,8 @@ class Street(Base):
     __table_args__ = {"schema": geography_schema}
 
     id = Column(Integer, primary_key=True)
-    wording = Column(String, nullable=False)
+    name = Column(String, nullable=False)
+    arrondissement = Column(Integer, nullable=True)
 
     addresses = relationship("Address", back_populates="street")
 

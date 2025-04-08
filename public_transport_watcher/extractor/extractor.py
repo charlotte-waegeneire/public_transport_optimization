@@ -1,17 +1,41 @@
 from public_transport_watcher.extractor.configuration import EXTRACTION_CONFIG
-from public_transport_watcher.extractor.extract import extract_navigo_validations
+from public_transport_watcher.extractor.extract import (
+    extract_addresses_informations,
+    extract_navigo_validations,
+    extract_stations_informations,
+)
+from public_transport_watcher.utils import get_query_result
+
+from public_transport_watcher.logging_config import get_logger
+
+logger = get_logger()
 
 
 class Extractor:
     def __init__(self):
         self.extract_config = EXTRACTION_CONFIG
-        self.batch_size = self.extract_config.get("batch_size")
+
+    def extract_stations_data(self):
+        config = self.extract_config.get("stations")
+        batch_size = config.get("batch_size", 100)
+        extract_stations_informations(batch_size)
 
     def extract_navigo_validations(self):
         config = self.extract_config.get("navigo")
-        extract_navigo_validations(config, self.batch_size)
+        existing_entries = get_query_result("get_existing_stations")
+        if existing_entries.empty:
+            logger.error("No existing stations found. Import stations data first.")
+            return
+        extract_navigo_validations(config)
+
+    def extract_addresses_informations(self):
+        config = self.extract_config.get("addresses", {})
+        batch_size = config.get("batch_size", 1000)
+        extract_addresses_informations(batch_size)
 
 
 if __name__ == "__main__":
     extractor = Extractor()
+    extractor.extract_stations_data()
     extractor.extract_navigo_validations()
+    extractor.extract_addresses_informations()
