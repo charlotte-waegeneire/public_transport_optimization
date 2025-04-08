@@ -10,7 +10,6 @@ from public_transport_watcher.utils import get_datalake_file
 
 logger = get_logger()
 
-# Configuration de l'API
 BASE_URL = "https://prim.iledefrance-mobilites.fr/marketplace/estimated-timetable"
 TRAFFIC_API_KEY = os.getenv("TRAFFIC_API_KEY")
 
@@ -29,17 +28,17 @@ def fetch_api_data(line_id: str) -> dict:
         response = requests.get(BASE_URL, headers=HEADERS, params=params)
 
         if response.status_code == 400:
-            logger.warning(f"Avertissement pour la ligne {line_id}: {response.status_code}, {response.text}")
+            logger.warning(f"Warning on line {line_id}: {response.status_code}, {response.text}")
             return None
 
         if response.status_code != 200:
-            logger.error(f"Erreur pour la ligne {line_id}: {response.status_code}, {response.text}")
+            logger.error(f"Error on line {line_id}: {response.status_code}, {response.text}")
             return None
 
         return response.json()
 
     except requests.exceptions.RequestException as e:
-        logger.error(f"Erreur de requete pour la ligne {line_id}: {e}")
+        logger.error(f"Request error on line {line_id}: {e}")
         return None
 
 
@@ -100,11 +99,11 @@ def extract_lines_data() -> pd.DataFrame:
         file_path = next(f for f in get_datalake_file("schedule", 2025, "") if "referentiel-des-lignes.csv" in f)
         return pd.read_csv(file_path, sep=";")
     except (StopIteration, FileNotFoundError) as e:
-        logger.error(f"Erreur lors du chargement des données des lignes : {e}")
+        logger.error(f"Failed to load row data : {e}")
         return pd.DataFrame()
 
 
-def process_traffic_data() -> pd.DataFrame:
+def _process_traffic_data() -> pd.DataFrame:
     """
     Processes traffic data for rail lines and merges with lines data.
     """
@@ -112,7 +111,6 @@ def process_traffic_data() -> pd.DataFrame:
     if lines_df.empty:
         return pd.DataFrame()
 
-    # Filter rail lines
     rail_lines_df = lines_df[lines_df["TransportMode"] == "rail"]
     rail_line_ids = ["STIF:Line::" + line_id + ":" for line_id in rail_lines_df["ID_Line"].tolist()]
 
@@ -131,30 +129,3 @@ def process_traffic_data() -> pd.DataFrame:
         columns={"TransportMode": "transport_mode", "OperatorName": "operator_name", "NetworkName": "network_name",
                  "ShortName_GroupOfLines": "full_line_name"
                  })
-
-
-def export_to_csv(df: pd.DataFrame):
-    """
-    Exports a DataFrame to a CSV file in the datalake.
-    """
-    try:
-        datalake_path = get_datalake_file("traffic", datetime.now().year, datetime.now().strftime("%m"))
-        if datalake_path:
-            file_path = os.path.join(datalake_path[0],
-                                     f"traffic_{datetime.now().strftime('%Y%m%d_%H%M%S')}.csv")
-            df.to_csv(file_path, index=False)
-            logger.info(f"Données exportées avec succès vers : {file_path}")
-        else:
-            logger.error("Chemin du datalake introuvable.")
-    except Exception as e:
-        logger.error(f"Erreur lors de l'exportation des données : {e}")
-
-
-# Use exemple
-final_df = process_traffic_data()
-
-if not final_df.empty:
-    print(final_df)
-    export_to_csv(final_df)
-else:
-    print("Aucune donnée traitée.")
