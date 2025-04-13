@@ -33,7 +33,7 @@ column_names = [
 ]
 
 
-def extract_airquality_data(
+def extract_air_quality_data(
     pollutants: Optional[List[str]] = None,
     limits: Optional[Dict[str, float]] = None,
 ) -> pd.DataFrame:

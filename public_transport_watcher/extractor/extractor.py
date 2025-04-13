@@ -1,7 +1,7 @@
 from public_transport_watcher.extractor.configuration import EXTRACTION_CONFIG
 from public_transport_watcher.extractor.extract import (
     extract_addresses_informations,
-    extract_airquality_data,
+    extract_air_quality_data,
     extract_navigo_validations,
     extract_stations_informations,
     process_traffic_data,
@@ -46,7 +46,7 @@ class Extractor:
         config = self.extract_config.get("pollution", {})
         pollutants = config.get("pollutants", [])
         limits = config.get("limits", {})
-        return extract_airquality_data(pollutants, limits)
+        return extract_air_quality_data(pollutants, limits)
 
 
 if __name__ == "__main__":
