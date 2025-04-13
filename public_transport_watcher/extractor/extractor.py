@@ -55,4 +55,4 @@ if __name__ == "__main__":
     extractor.extract_navigo_validations()
     extractor.extract_addresses_informations()
     traffic_data = extractor.extract_traffic_data()
-    air_quality_data = extractor.extract_airquality_data() # needs to be scheduled
+    air_quality_data = extractor.extract_airquality_data()  # needs to be scheduled
