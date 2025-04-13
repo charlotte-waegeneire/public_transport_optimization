@@ -41,7 +41,7 @@ class Extractor:
     def extract_traffic_data(self):
         return process_traffic_data()
 
-    def extract_airquality_data(self):
+    def extract_air_quality_data(self):
         get_latest_air_quality_csv()
         config = self.extract_config.get("pollution", {})
         pollutants = config.get("pollutants", [])
@@ -55,4 +55,4 @@ if __name__ == "__main__":
     extractor.extract_navigo_validations()
     extractor.extract_addresses_informations()
     traffic_data = extractor.extract_traffic_data()
-    air_quality_data = extractor.extract_airquality_data()  # needs to be scheduled
+    air_quality_data = extractor.extract_air_quality_data()  # needs to be scheduled
