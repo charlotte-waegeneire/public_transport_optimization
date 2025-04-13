@@ -10,6 +10,11 @@ MR #5
 
 ### Added
 - Extraction of the air quality data to find when the air quality is bad
+- Real time extraction of the file
+- Utils function to get an environnement variable
+
+### Fixed
+- Import for the utils submodule
 
 ## [0.4.0] - 2025-04-07
 MR #3

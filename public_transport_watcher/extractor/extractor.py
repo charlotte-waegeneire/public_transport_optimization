@@ -1,5 +1,3 @@
-import pandas as pd
-
 from public_transport_watcher.extractor.configuration import EXTRACTION_CONFIG
 from public_transport_watcher.extractor.extract import (
     extract_addresses_informations,
@@ -7,6 +5,9 @@ from public_transport_watcher.extractor.extract import (
     extract_navigo_validations,
     extract_stations_informations,
     process_traffic_data,
+)
+from public_transport_watcher.extractor.extract.real_time import (
+    get_latest_air_quality_csv,
 )
 from public_transport_watcher.utils import get_query_result
 
@@ -41,6 +42,7 @@ class Extractor:
         return process_traffic_data()
 
     def extract_airquality_data(self):
+        get_latest_air_quality_csv()
         config = self.extract_config.get("pollution", {})
         pollutants = config.get("pollutants", [])
         limits = config.get("limits", {})
@@ -53,3 +55,4 @@ if __name__ == "__main__":
     extractor.extract_navigo_validations()
     extractor.extract_addresses_informations()
     traffic_data = extractor.extract_traffic_data()
+    air_quality_data = extractor.extract_airquality_data() # needs to be scheduled
