@@ -5,6 +5,26 @@ All notable changes to this project will be documented in this file.
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.1.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## [0.6.0] - 2025-04-16
+MR #6
+
+### Added
+- Extraction of weather data with `Infoclimat.fr` API
+- API variable in `.env`
+- Ruff config
+- `beautifulsoup4` and `requests` dependancy
+
+## [0.5.0] - 2025-04-13
+MR #5
+
+### Added
+- Extraction of the air quality data to find when the air quality is bad
+- Real time extraction of the file
+- Utils function to get an environnement variable
+
+### Fixed
+- Import for the utils submodule
+
 ## [0.4.0] - 2025-04-07
 MR #3
 
