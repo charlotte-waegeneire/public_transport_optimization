@@ -48,6 +48,12 @@ class Extractor:
         limits = config.get("limits", {})
         return extract_air_quality_data(pollutants, limits)
 
+    def extract_categ_data(self):
+        config = self.extract_config.get("categ", {})
+
+    def extract_transport_data(self):
+        config = self.extract_config.get("transport", {})
+
 
 if __name__ == "__main__":
     extractor = Extractor()
@@ -56,3 +62,6 @@ if __name__ == "__main__":
     extractor.extract_addresses_informations()
     traffic_data = extractor.extract_traffic_data()
     air_quality_data = extractor.extract_air_quality_data()  # needs to be scheduled
+    extractor.extract_categ_data()
+    extractor.extract_transport_data()
+
