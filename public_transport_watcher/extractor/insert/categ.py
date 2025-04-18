@@ -18,7 +18,7 @@ def insert_transport_modes(df: pd.DataFrame) -> None:
     session = Session()
 
     try:
-        modes = df['TransportMode'].dropna().unique()
+        modes = df["TransportMode"].dropna().unique()
         inserted = 0
 
         for mode in modes:

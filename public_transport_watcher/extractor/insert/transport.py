@@ -21,7 +21,11 @@ def insert_transport_lines(df: pd.DataFrame) -> None:
 
         for _, row in df.iterrows():
             try:
-                categ = session.query(Categ).filter(Categ.name == row["TransportMode"]).first()
+                categ = (
+                    session.query(Categ)
+                    .filter(Categ.name == row["TransportMode"])
+                    .first()
+                )
                 if not categ:
                     logger.warning(f"Unknown category for mode: {row['TransportMode']}")
                     continue
@@ -30,10 +34,7 @@ def insert_transport_lines(df: pd.DataFrame) -> None:
                 if exists:
                     continue
 
-                transport = Transport(
-                    id=row["numeric_id"],
-                    type_id=categ.id
-                )
+                transport = Transport(id=row["numeric_id"], type_id=categ.id)
                 session.add(transport)
                 inserted += 1
 

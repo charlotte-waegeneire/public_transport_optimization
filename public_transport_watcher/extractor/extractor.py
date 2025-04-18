@@ -64,4 +64,3 @@ if __name__ == "__main__":
     air_quality_data = extractor.extract_air_quality_data()  # needs to be scheduled
     extractor.extract_categ_data()
     extractor.extract_transport_data()
-
