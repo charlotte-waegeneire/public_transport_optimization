@@ -22,4 +22,7 @@ EXTRACTION_CONFIG = {
             "PM2.5": 25,
         },
     },
+    "weather": {
+        "station": "ME099",
+    },
 }
