@@ -6,7 +6,6 @@ from .schedule import extract_schedule_data
 from .stations import extract_stations_informations
 from .traffic import extract_traffic_data
 from .transport import extract_transport_data
-from .weather import extract_weather_data
 
 __all__ = [
     "extract_addresses_informations",
@@ -17,5 +16,4 @@ __all__ = [
     "extract_stations_informations",
     "extract_traffic_data",
     "extract_transport_data",
-    "extract_weather_data",
 ]

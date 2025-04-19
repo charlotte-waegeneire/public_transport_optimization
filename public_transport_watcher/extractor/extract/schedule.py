@@ -38,7 +38,7 @@ def extract_schedule_data() -> pd.DataFrame:
     gtfs_data = _extract_gtfs_data()
 
     if not gtfs_data:
-        logger.warning("No GTFS data available for processing.")
+        logger.error("No GTFS data available for processing.")
         return pd.DataFrame()
 
     try:
@@ -46,7 +46,6 @@ def extract_schedule_data() -> pd.DataFrame:
         df_trips = gtfs_data["trips"]
         df_calendar = gtfs_data["calendar"]
 
-        # Jointures
         df = df_stop_times.merge(df_trips[["trip_id", "route_id", "service_id"]], on="trip_id", how="left")
         df = df.merge(
             df_calendar[["service_id", "start_date", "end_date"]],
@@ -54,12 +53,10 @@ def extract_schedule_data() -> pd.DataFrame:
             how="left",
         )
 
-        # Conversions
         df["start_date"] = pd.to_datetime(df["start_date"], format="%Y%m%d", errors="coerce")
         df["end_date"] = pd.to_datetime(df["end_date"], format="%Y%m%d", errors="coerce")
         df["arrival_time"] = pd.to_datetime(df["arrival_time"], format="%H:%M:%S", errors="coerce").dt.time
 
-        # Construction du timestamp
         df["service_date"] = df["start_date"]
         df["arrival_timestamp"] = df.apply(
             lambda row: pd.Timestamp.combine(row["service_date"], row["arrival_time"])
@@ -68,11 +65,9 @@ def extract_schedule_data() -> pd.DataFrame:
             axis=1,
         )
 
-        # Nettoyage des identifiants
         df["line_numeric_id"] = df["trip_id"].str.extract(r"(\d+)").astype(int)
         df["stop_id"] = df["stop_id"].str.extract(r"(\d+)").astype(int)
 
-        # Filtrage des colonnes finales
         df = df[["arrival_timestamp", "stop_id", "line_numeric_id"]].dropna()
 
         print(df.head())
