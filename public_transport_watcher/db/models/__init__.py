@@ -1,49 +1,49 @@
 from public_transport_watcher.db.models.base import Base
+from public_transport_watcher.db.models.geography import (
+    Address,
+    Monument,
+    Parking,
+    Street,
+)
+from public_transport_watcher.db.models.pollution import (
+    Measure,
+    PollutionStation,
+    PollutionTimeBin,
+    Sensor,
+    Unity,
+)
 from public_transport_watcher.db.models.transport import (
-    TransportStation,
-    TransportTimeBin,
-    Transport,
     Categ,
     Schedule,
     Traffic,
-)
-from public_transport_watcher.db.models.pollution import (
-    PollutionStation,
-    PollutionTimeBin,
-    Measure,
-    Unity,
-    Sensor,
-)
-from public_transport_watcher.db.models.geography import (
-    Street,
-    Address,
-    Parking,
-    Monument,
+    Transport,
+    TransportStation,
+    TransportTimeBin,
 )
 from public_transport_watcher.db.models.weather import (
+    WeatherMeasure,
     WeatherStation,
     WeatherTimeBin,
-    WeatherMeasure,
 )
 
 __all__ = [
+    "Address",
     "Base",
-    "TransportStation",
-    "TransportTimeBin",
-    "Transport",
     "Categ",
-    "Schedule",
-    "Traffic",
+    "Measure",
+    "Monument",
+    "Parking",
     "PollutionStation",
     "PollutionTimeBin",
-    "Measure",
-    "Unity",
+    "Schedule",
     "Sensor",
     "Street",
-    "Address",
-    "Parking",
-    "Monument",
+    "Traffic",
+    "Transport",
+    "TransportStation",
+    "TransportTimeBin",
+    "Unity",
+    "WeatherMeasure",
     "WeatherStation",
     "WeatherTimeBin",
-    "WeatherMeasure",
 ]

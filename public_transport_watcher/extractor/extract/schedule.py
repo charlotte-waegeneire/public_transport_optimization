@@ -13,9 +13,7 @@ def _extract_gtfs_data() -> dict[str, pd.DataFrame]:
     Returns a dictionary with the three dataframes.
     """
     try:
-        files = get_datalake_file(
-            data_category="schedule", folder="2025", subfolder="april"
-        )
+        files = get_datalake_file(data_category="schedule", folder="2025", subfolder="april")
 
         stop_times_file = next(f for f in files if f.endswith("stop_times.txt"))
         trips_file = next(f for f in files if f.endswith("trips.txt"))
@@ -32,7 +30,7 @@ def _extract_gtfs_data() -> dict[str, pd.DataFrame]:
         return {}
 
 
-def process_schedule_data() -> pd.DataFrame:
+def extract_schedule_data() -> pd.DataFrame:
     """
     Processes schedule data from GTFS files and merges them into a single DataFrame.
     Returns a DataFrame with arrival_timestamp, stop_id, and line_numeric_id.
@@ -49,9 +47,7 @@ def process_schedule_data() -> pd.DataFrame:
         df_calendar = gtfs_data["calendar"]
 
         # Jointures
-        df = df_stop_times.merge(
-            df_trips[["trip_id", "route_id", "service_id"]], on="trip_id", how="left"
-        )
+        df = df_stop_times.merge(df_trips[["trip_id", "route_id", "service_id"]], on="trip_id", how="left")
         df = df.merge(
             df_calendar[["service_id", "start_date", "end_date"]],
             on="service_id",
@@ -59,15 +55,9 @@ def process_schedule_data() -> pd.DataFrame:
         )
 
         # Conversions
-        df["start_date"] = pd.to_datetime(
-            df["start_date"], format="%Y%m%d", errors="coerce"
-        )
-        df["end_date"] = pd.to_datetime(
-            df["end_date"], format="%Y%m%d", errors="coerce"
-        )
-        df["arrival_time"] = pd.to_datetime(
-            df["arrival_time"], format="%H:%M:%S", errors="coerce"
-        ).dt.time
+        df["start_date"] = pd.to_datetime(df["start_date"], format="%Y%m%d", errors="coerce")
+        df["end_date"] = pd.to_datetime(df["end_date"], format="%Y%m%d", errors="coerce")
+        df["arrival_time"] = pd.to_datetime(df["arrival_time"], format="%H:%M:%S", errors="coerce").dt.time
 
         # Construction du timestamp
         df["service_date"] = df["start_date"]

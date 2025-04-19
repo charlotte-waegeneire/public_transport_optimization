@@ -1,7 +1,8 @@
 import pandas as pd
+
 from public_transport_watcher.extractor.insert import insert_stations_informations
-from public_transport_watcher.utils import get_datalake_file
 from public_transport_watcher.logging_config import get_logger
+from public_transport_watcher.utils import get_datalake_file
 
 logger = get_logger()
 
@@ -33,9 +34,7 @@ def extract_stations_informations(batch_size: int = 100):
         useful_columns = ["Geo Point", "id_ref_ZdC", "nom_ZdC", "mode"]
         stations_df = stations_df[useful_columns]
 
-        stations_df[["latitude", "longitude"]] = stations_df["Geo Point"].str.split(
-            ",", expand=True
-        )
+        stations_df[["latitude", "longitude"]] = stations_df["Geo Point"].str.split(",", expand=True)
         stations_df = stations_df.drop(columns=["Geo Point"])
 
         stations_df = stations_df[stations_df["mode"] == "METRO"]

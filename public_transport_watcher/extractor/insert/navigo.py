@@ -1,15 +1,15 @@
-from typing import Tuple, List, Dict, Any
 from datetime import datetime
+from typing import Any, Dict, List, Tuple
 
 import pandas as pd
 from sqlalchemy import select
-from sqlalchemy.orm import sessionmaker
 from sqlalchemy.dialects.postgresql import insert
+from sqlalchemy.orm import sessionmaker
 
 from public_transport_watcher.db.models.transport import (
+    Traffic,
     TransportStation,
     TransportTimeBin,
-    Traffic,
 )
 from public_transport_watcher.logging_config import get_logger
 from public_transport_watcher.utils import get_engine
@@ -41,9 +41,7 @@ def insert_navigo_data(df: pd.DataFrame) -> None:
                 station_name = row["libelle_arret"]
                 stations_map[station_id] = station_name
 
-                start_timestamp, end_timestamp = _create_timestamps(
-                    row["jour"], row["tranche_horaire"]
-                )
+                start_timestamp, end_timestamp = _create_timestamps(row["jour"], row["tranche_horaire"])
                 bin_key = (start_timestamp, end_timestamp)
                 if bin_key not in time_bins_map:
                     time_bins_map[bin_key] = row["cat_day"]
@@ -94,11 +92,7 @@ def _bulk_process_stations(session, stations_map: Dict[int, str]) -> int:
         return 0
 
     existing_stations = (
-        session.execute(
-            select(TransportStation).where(
-                TransportStation.id.in_(list(stations_map.keys()))
-            )
-        )
+        session.execute(select(TransportStation).where(TransportStation.id.in_(list(stations_map.keys()))))
         .scalars()
         .all()
     )
@@ -136,8 +130,7 @@ def _bulk_process_time_bins(
         for key in batch_keys:
             time_bin = session.execute(
                 select(TransportTimeBin).where(
-                    (TransportTimeBin.start_timestamp == key[0])
-                    & (TransportTimeBin.end_timestamp == key[1])
+                    (TransportTimeBin.start_timestamp == key[0]) & (TransportTimeBin.end_timestamp == key[1])
                 )
             ).scalar_one_or_none()
 
@@ -161,16 +154,12 @@ def _bulk_process_time_bins(
             time_bin = TransportTimeBin(**time_bin_data)
             session.add(time_bin)
             session.flush()
-            result_dict[(time_bin.start_timestamp, time_bin.end_timestamp)] = (
-                time_bin.id
-            )
+            result_dict[(time_bin.start_timestamp, time_bin.end_timestamp)] = time_bin.id
 
     return result_dict
 
 
-def _bulk_process_traffic(
-    session, traffic_records: List[Dict[str, Any]], bulk_size: int = 1000
-) -> int:
+def _bulk_process_traffic(session, traffic_records: List[Dict[str, Any]], bulk_size: int = 1000) -> int:
     """Process traffic data in bulk with specified batch size and return count of records processed."""
     if not traffic_records:
         return 0
@@ -186,8 +175,7 @@ def _bulk_process_traffic(
         for record in batch:
             traffic = session.execute(
                 select(Traffic).where(
-                    (Traffic.station_id == record["station_id"])
-                    & (Traffic.time_bin_id == record["time_bin_id"])
+                    (Traffic.station_id == record["station_id"]) & (Traffic.time_bin_id == record["time_bin_id"])
                 )
             ).scalar_one_or_none()
 

@@ -22,9 +22,7 @@ class Address(Base):
     __table_args__ = {"schema": geography_schema}
 
     id = Column(Integer, primary_key=True)
-    street_id = Column(
-        Integer, ForeignKey(f"{geography_schema}.street.id"), nullable=False
-    )
+    street_id = Column(Integer, ForeignKey(f"{geography_schema}.street.id"), nullable=False)
     number = Column(String, nullable=True)
     longitude = Column(Float, nullable=True)
     latitude = Column(Float, nullable=True)
@@ -40,9 +38,7 @@ class Parking(Base):
 
     id = Column(Integer, primary_key=True)
     name = Column(String, nullable=False)
-    address_id = Column(
-        Integer, ForeignKey(f"{geography_schema}.address.id"), nullable=False
-    )
+    address_id = Column(Integer, ForeignKey(f"{geography_schema}.address.id"), nullable=False)
     type = Column(String, nullable=True)
     floor_amount = Column(Integer, nullable=True)
     places_amount = Column(Integer, nullable=True)
@@ -56,8 +52,6 @@ class Monument(Base):
 
     id = Column(Integer, primary_key=True)
     name = Column(String, nullable=False)
-    address_id = Column(
-        Integer, ForeignKey(f"{geography_schema}.address.id"), nullable=False
-    )
+    address_id = Column(Integer, ForeignKey(f"{geography_schema}.address.id"), nullable=False)
 
     address = relationship("Address", back_populates="monuments")

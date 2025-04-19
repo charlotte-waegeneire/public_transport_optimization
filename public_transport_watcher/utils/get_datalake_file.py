@@ -7,9 +7,7 @@ env_path = Path(__file__).parent.parent.parent / ".env"
 load_dotenv(dotenv_path=env_path)
 
 
-def get_datalake_file(
-    data_category: str, folder: str, subfolder: str = None
-) -> list[str]:
+def get_datalake_file(data_category: str, folder: str, subfolder: str = None) -> list[str]:
     """
     Get the files path for a given data category and subfolder in the datalake.
 
@@ -42,9 +40,7 @@ def get_datalake_file(
         raise FileNotFoundError(f"The path {data_path} does not exist.")
 
     found_files = [
-        os.path.join(data_path, f)
-        for f in os.listdir(data_path)
-        if os.path.isfile(os.path.join(data_path, f))
+        os.path.join(data_path, f) for f in os.listdir(data_path) if os.path.isfile(os.path.join(data_path, f))
     ]
     if not found_files:
         raise FileNotFoundError(f"No files found in the path {data_path}.")

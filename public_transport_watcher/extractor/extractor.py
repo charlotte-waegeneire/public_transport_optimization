@@ -4,14 +4,15 @@ from public_transport_watcher.extractor.extract import (
     extract_air_quality_data,
     extract_navigo_validations,
     extract_stations_informations,
+    extract_transport_data,
+    extract_weather_data,
     process_traffic_data,
 )
 from public_transport_watcher.extractor.extract.real_time import (
     get_latest_air_quality_csv,
 )
-from public_transport_watcher.utils import get_query_result
-
 from public_transport_watcher.logging_config import get_logger
+from public_transport_watcher.utils import get_query_result
 
 logger = get_logger()
 
@@ -48,11 +49,13 @@ class Extractor:
         limits = config.get("limits", {})
         return extract_air_quality_data(pollutants, limits)
 
-    def extract_categ_data(self):
-        config = self.extract_config.get("categ", {})
-
     def extract_transport_data(self):
         config = self.extract_config.get("transport", {})
+        extract_transport_data(config)
+
+    def extract_weather_data(self):
+        config = self.extract_config.get("weather", {})
+        return extract_weather_data(config)
 
 
 if __name__ == "__main__":
@@ -62,5 +65,6 @@ if __name__ == "__main__":
     extractor.extract_addresses_informations()
     traffic_data = extractor.extract_traffic_data()
     air_quality_data = extractor.extract_air_quality_data()  # needs to be scheduled
-    extractor.extract_categ_data()
+    categ_data = extractor.extract_categ_data()
     extractor.extract_transport_data()
+    weather_data = extractor.extract_weather_data()  # needs to be scheduled

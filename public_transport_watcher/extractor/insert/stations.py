@@ -1,6 +1,6 @@
 import pandas as pd
-from sqlalchemy.exc import SQLAlchemyError
 from sqlalchemy import text
+from sqlalchemy.exc import SQLAlchemyError
 
 from public_transport_watcher.logging_config import get_logger
 from public_transport_watcher.utils import get_engine
@@ -51,15 +51,11 @@ def insert_stations_informations(stations: pd.DataFrame, batch_size: int = 100) 
             for i in range(0, len(records), batch_size):
                 batch = records[i : i + batch_size]
                 current_batch = (i // batch_size) + 1
-                logger.debug(
-                    f"Processing batch {current_batch}/{total_batches} ({len(batch)} records)"
-                )
+                logger.debug(f"Processing batch {current_batch}/{total_batches} ({len(batch)} records)")
                 connection.execute(text(insert_stmt), batch)
 
             connection.commit()
-            logger.info(
-                f"Successfully inserted/updated {len(stations)} stations in the database"
-            )
+            logger.info(f"Successfully inserted/updated {len(stations)} stations in the database")
 
     except SQLAlchemyError as e:
         logger.error(f"Database error inserting/updating stations: {e}")

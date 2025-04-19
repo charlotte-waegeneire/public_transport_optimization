@@ -1,7 +1,7 @@
 import logging
-import sys
 from logging.handlers import RotatingFileHandler
 import os
+import sys
 
 LOG_DIR = "logs"
 LOG_FILE = os.path.join(LOG_DIR, "transport_watcher.log")
@@ -20,9 +20,7 @@ if not logger.handlers:  # Only configure if not already done
     file_handler.setLevel(logging.DEBUG)
 
     console_format = logging.Formatter("%(levelname)s - %(message)s")
-    file_format = logging.Formatter(
-        "%(asctime)s - %(name)s - %(levelname)s - %(message)s"
-    )
+    file_format = logging.Formatter("%(asctime)s - %(name)s - %(levelname)s - %(message)s")
 
     console_handler.setFormatter(console_format)
     file_handler.setFormatter(file_format)

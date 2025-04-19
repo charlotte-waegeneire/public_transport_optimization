@@ -7,7 +7,6 @@ from public_transport_watcher.extractor.insert import insert_navigo_data
 from public_transport_watcher.logging_config import get_logger
 from public_transport_watcher.utils import get_datalake_file
 
-
 logger = get_logger()
 
 _COLUMN_MAPPING = COLUMN_MAPPING["navigo"]
@@ -30,9 +29,7 @@ def extract_navigo_validations(config: Dict) -> None:
     batch_size = config["batch_size"]
 
     if not files_config:
-        logger.error(
-            "No files configuration provided for Navigo validations extraction."
-        )
+        logger.error("No files configuration provided for Navigo validations extraction.")
         return
 
     failures = []
@@ -49,9 +46,7 @@ def extract_navigo_validations(config: Dict) -> None:
         logger.info("Successfully processed all years")
 
 
-def _process_year_data(
-    year: int, periods: List[Union[str, Dict]], batch_size: int
-) -> None:
+def _process_year_data(year: int, periods: List[Union[str, Dict]], batch_size: int) -> None:
     for period in periods:
         if isinstance(period, str):
             # Simple period (e.g., "s1", "s2")
@@ -75,9 +70,7 @@ def _process_period_data(year: int, period: str, batch_size: int) -> None:
         validations_file, profiles_file = _find_file_types(files)
 
         if not validations_file or not profiles_file:
-            logger.error(
-                f"Could not identify validations and profiles files for {year}/{period}"
-            )
+            logger.error(f"Could not identify validations and profiles files for {year}/{period}")
             return
 
         logger.info(f"Processing data for {year}/{period}")
@@ -96,27 +89,19 @@ def _process_period_data(year: int, period: str, batch_size: int) -> None:
         chunks_processed = 0
         total_records = 0
 
-        for validations_chunk in pd.read_csv(
-            validations_file, sep=";", chunksize=batch_size, parse_dates=False
-        ):
+        for validations_chunk in pd.read_csv(validations_file, sep=";", chunksize=batch_size, parse_dates=False):
             validations_chunk.columns = _COLUMN_MAPPING["validations"]
             chunks_processed += 1
             records_in_chunk = len(validations_chunk)
             total_records += records_in_chunk
 
-            logger.info(
-                f"Processing chunk {chunks_processed} with {records_in_chunk} records"
-            )
+            logger.info(f"Processing chunk {chunks_processed} with {records_in_chunk} records")
 
-            hourly_validations = _compute_hourly_validations(
-                validations_chunk, profiles_df
-            )
+            hourly_validations = _compute_hourly_validations(validations_chunk, profiles_df)
             if not hourly_validations.empty:
                 insert_navigo_data(hourly_validations)
 
-            logger.info(
-                f"Chunk {chunks_processed} processed, {total_records} total records so far"
-            )
+            logger.info(f"Chunk {chunks_processed} processed, {total_records} total records so far")
 
         logger.info(
             f"Completed processing for {year}/{period} - {total_records} total records in {chunks_processed} chunks"
@@ -141,14 +126,10 @@ def _find_file_types(files: List[str]) -> Tuple[str, str]:
     return validations_file, profils_file
 
 
-def _compute_hourly_validations(
-    validations_df: pd.DataFrame, profiles_df: pd.DataFrame
-) -> pd.DataFrame:
+def _compute_hourly_validations(validations_df: pd.DataFrame, profiles_df: pd.DataFrame) -> pd.DataFrame:
     # Handle "5 or less" validations
     if "nb_vald" in validations_df.columns:
-        validations_df["nb_vald"] = pd.to_numeric(
-            validations_df["nb_vald"], errors="coerce"
-        )
+        validations_df["nb_vald"] = pd.to_numeric(validations_df["nb_vald"], errors="coerce")
         validations_df["nb_vald"] = validations_df["nb_vald"].fillna(3)
 
     validations_df = validations_df[validations_df["code_stif_arret"] != "ND"]
@@ -166,14 +147,10 @@ def _compute_hourly_validations(
 
     if "jour" in validations_df.columns:
         try:
-            validations_df["jour"] = pd.to_datetime(
-                validations_df["jour"], format="%d/%m/%Y", errors="raise"
-            )
+            validations_df["jour"] = pd.to_datetime(validations_df["jour"], format="%d/%m/%Y", errors="raise")
         except ValueError:
             try:
-                validations_df["jour"] = pd.to_datetime(
-                    validations_df["jour"], format="%Y-%m-%d", errors="raise"
-                )
+                validations_df["jour"] = pd.to_datetime(validations_df["jour"], format="%Y-%m-%d", errors="raise")
             except ValueError:
                 validations_df["jour"] = pd.to_datetime(
                     validations_df["jour"],
@@ -184,18 +161,14 @@ def _compute_hourly_validations(
         validations_df["cat_day"] = validations_df.apply(_determine_day_type, axis=1)
         group_cols.append("cat_day")
 
-    validations_aggr = validations_df.groupby(group_cols, as_index=False).agg(
-        nb_vald_total=("nb_vald", "sum")
-    )
+    validations_aggr = validations_df.groupby(group_cols, as_index=False).agg(nb_vald_total=("nb_vald", "sum"))
 
     validations_aggr.rename(columns={"nb_vald_total": "nb_vald"}, inplace=True)
     merge_keys_full = merge_keys + ["cat_day"]
 
     merged_df = pd.merge(validations_aggr, profiles_df, on=merge_keys_full, how="inner")
 
-    merged_df["validations_horaires"] = (
-        merged_df["nb_vald"] * merged_df["pourc_validations"] / 100
-    )
+    merged_df["validations_horaires"] = merged_df["nb_vald"] * merged_df["pourc_validations"] / 100
 
     validation_cols = list(validations_aggr.columns)
     cols_to_add = ["trnc_horr_60", "validations_horaires", "pourc_validations"]
@@ -203,17 +176,15 @@ def _compute_hourly_validations(
     result_df = merged_df[validation_cols + cols_to_add].copy()
     result_df.rename(columns={"trnc_horr_60": "tranche_horaire"}, inplace=True)
 
-    first_labels = result_df.drop_duplicates(
-        subset=["ida", "jour", "tranche_horaire"], keep="first"
-    )[["ida", "jour", "tranche_horaire", "libelle_arret"]]
+    first_labels = result_df.drop_duplicates(subset=["ida", "jour", "tranche_horaire"], keep="first")[
+        ["ida", "jour", "tranche_horaire", "libelle_arret"]
+    ]
 
     result_df = result_df.drop(columns=["libelle_arret"])
     result_df = pd.merge(result_df, first_labels, on=["ida", "jour", "tranche_horaire"])
 
     result_df = (
-        result_df.groupby(
-            ["ida", "libelle_arret", "jour", "cat_day", "tranche_horaire"]
-        )["validations_horaires"]
+        result_df.groupby(["ida", "libelle_arret", "jour", "cat_day", "tranche_horaire"])["validations_horaires"]
         .sum()
         .reset_index()
     )

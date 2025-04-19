@@ -1,8 +1,7 @@
 from logging import getLogger
 
-from sqlalchemy.orm import sessionmaker
-
 import pandas as pd
+from sqlalchemy.orm import sessionmaker
 
 from public_transport_watcher.db.models import Schedule
 from public_transport_watcher.utils import get_engine
@@ -28,9 +27,7 @@ def insert_schedule_data(df: pd.DataFrame) -> None:
     session = Session()
 
     try:
-        existing_station_ids = {
-            id for (id,) in session.query(Schedule.station_id).distinct().all()
-        }
+        existing_station_ids = {id for (id,) in session.query(Schedule.station_id).distinct().all()}
         initial_len = len(df)
         df = df[df["stop_id"].isin(existing_station_ids)]
         filtered_len = len(df)

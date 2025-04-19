@@ -21,11 +21,7 @@ def insert_transport_lines(df: pd.DataFrame) -> None:
 
         for _, row in df.iterrows():
             try:
-                categ = (
-                    session.query(Categ)
-                    .filter(Categ.name == row["TransportMode"])
-                    .first()
-                )
+                categ = session.query(Categ).filter(Categ.name == row["TransportMode"]).first()
                 if not categ:
                     logger.warning(f"Unknown category for mode: {row['TransportMode']}")
                     continue

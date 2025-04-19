@@ -15,12 +15,8 @@ def extract_categ_data() -> pd.DataFrame:
     try:
         df_transport_type = _extract_lines_data()
         df_transport_type = df_transport_type[["ID_Line", "TransportMode"]]
-        df_transport_type.loc[:, "TransportMode"] = (
-            df_transport_type["TransportMode"].str.strip().str.lower()
-        )
-        return df_transport_type.dropna(subset=["TransportMode"]).drop_duplicates(
-            subset=["TransportMode"]
-        )
+        df_transport_type.loc[:, "TransportMode"] = df_transport_type["TransportMode"].str.strip().str.lower()
+        return df_transport_type.dropna(subset=["TransportMode"]).drop_duplicates(subset=["TransportMode"])
     except Exception as e:
         logger.error(f"Failed to extract transport categories: {e}")
         return pd.DataFrame()

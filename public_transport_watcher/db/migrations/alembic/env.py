@@ -1,11 +1,11 @@
+from logging.config import fileConfig
 import os
 import sys
 
 from alembic import context
-from logging.config import fileConfig
 from sqlalchemy import engine_from_config, pool, text
 
-from public_transport_watcher.db.models import *
+from public_transport_watcher.db.models.base import Base
 from public_transport_watcher.utils import get_credentials
 
 DB_USER, DB_PASSWORD, DB_HOST, DB_PORT, DB_NAME = get_credentials()

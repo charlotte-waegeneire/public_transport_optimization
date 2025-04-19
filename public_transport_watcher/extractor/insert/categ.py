@@ -1,5 +1,4 @@
 import pandas as pd
-
 from sqlalchemy.orm import sessionmaker
 
 from public_transport_watcher.db.models import Categ

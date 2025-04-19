@@ -49,12 +49,8 @@ class Schedule(Base):
 
     id = Column(Integer, primary_key=True)
     timestamp = Column(DateTime, nullable=False)
-    station_id = Column(
-        Integer, ForeignKey(f"{transport_schema}.station.id"), nullable=False
-    )
-    transport_id = Column(
-        Integer, ForeignKey(f"{transport_schema}.transport.id"), nullable=False
-    )
+    station_id = Column(Integer, ForeignKey(f"{transport_schema}.station.id"), nullable=False)
+    transport_id = Column(Integer, ForeignKey(f"{transport_schema}.transport.id"), nullable=False)
 
     station = relationship("TransportStation", back_populates="schedules")
     transport = relationship("Transport", back_populates="schedules")
@@ -69,12 +65,8 @@ class Traffic(Base):
     __table_args__ = {"schema": transport_schema}
 
     id = Column(Integer, primary_key=True)
-    station_id = Column(
-        Integer, ForeignKey(f"{transport_schema}.station.id"), nullable=False
-    )
-    time_bin_id = Column(
-        Integer, ForeignKey(f"{transport_schema}.time_bin.id"), nullable=False
-    )
+    station_id = Column(Integer, ForeignKey(f"{transport_schema}.station.id"), nullable=False)
+    time_bin_id = Column(Integer, ForeignKey(f"{transport_schema}.time_bin.id"), nullable=False)
     validations = Column(Integer, nullable=True)
 
     station = relationship("TransportStation", back_populates="traffic_data")

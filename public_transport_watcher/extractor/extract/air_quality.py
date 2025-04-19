@@ -1,5 +1,6 @@
-import pandas as pd
 from typing import Dict, List, Optional
+
+import pandas as pd
 
 from public_transport_watcher.logging_config import get_logger
 from public_transport_watcher.utils import get_datalake_file
@@ -71,9 +72,7 @@ def extract_air_quality_data(
     air_quality_df["end_datetime"] = pd.to_datetime(air_quality_df["end_datetime"])
 
     last_time_interval = air_quality_df["start_datetime"].max()
-    air_quality_df = air_quality_df[
-        air_quality_df["start_datetime"] == last_time_interval
-    ]
+    air_quality_df = air_quality_df[air_quality_df["start_datetime"] == last_time_interval]
 
     useless_cols = [
         "organism",
@@ -93,9 +92,7 @@ def extract_air_quality_data(
 
     air_quality_df = air_quality_df[air_quality_df["validity"] == 1]
 
-    air_quality_df = (
-        air_quality_df.groupby("pollutant").agg({"raw_value": "mean"}).reset_index()
-    )
+    air_quality_df = air_quality_df.groupby("pollutant").agg({"raw_value": "mean"}).reset_index()
     air_quality_df["value"] = air_quality_df["raw_value"].round().astype(int)
     air_quality_df = air_quality_df.drop("raw_value", axis=1)
 

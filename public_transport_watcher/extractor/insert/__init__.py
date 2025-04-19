@@ -8,8 +8,8 @@ from .transport import insert_transport_lines
 __all__ = [
     "insert_addresses_informations",
     "insert_navigo_data",
-    "insert_stations_informations",
-    "insert_transport_modes",
-    "insert_transport_lines",
     "insert_schedule_data",
+    "insert_stations_informations",
+    "insert_transport_lines",
+    "insert_transport_modes",
 ]

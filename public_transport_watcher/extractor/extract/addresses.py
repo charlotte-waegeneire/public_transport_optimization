@@ -1,4 +1,5 @@
 import pandas as pd
+
 from public_transport_watcher.extractor.insert import insert_addresses_informations
 from public_transport_watcher.logging_config import get_logger
 
@@ -34,9 +35,7 @@ def extract_addresses_informations(batch_size: int = 1000) -> None:
         initial_count = len(addresses_df)
         logger.info(f"Loaded {initial_count} address records")
 
-        addresses_df[["latitude", "longitude"]] = addresses_df[
-            "Geometry X Y"
-        ].str.split(",", expand=True)
+        addresses_df[["latitude", "longitude"]] = addresses_df["Geometry X Y"].str.split(",", expand=True)
 
         useful_columns = [
             "N_SQ_AD",  # id informatique
@@ -50,15 +49,11 @@ def extract_addresses_informations(batch_size: int = 1000) -> None:
             "longitude",
         ]
         addresses_df = addresses_df[useful_columns]
-        addresses_df = addresses_df.dropna(
-            subset=["N_SQ_AD", "N_VOIE", "L_ADR", "C_AR"]
-        )
+        addresses_df = addresses_df.dropna(subset=["N_SQ_AD", "N_VOIE", "L_ADR", "C_AR"])
 
         clean_count = len(addresses_df)
         if initial_count > clean_count:
-            logger.info(
-                f"Removed {initial_count - clean_count} records with missing data"
-            )
+            logger.info(f"Removed {initial_count - clean_count} records with missing data")
 
         mapping_types = [int, int, str, str, str, str, int, float, float]
         mapping_types = dict(zip(useful_columns, mapping_types))
@@ -68,13 +63,9 @@ def extract_addresses_informations(batch_size: int = 1000) -> None:
         addresses_df["street_name"] = addresses_df.apply(_extract_street_name, axis=1)
         addresses_df["number"] = addresses_df.apply(_build_street_number, axis=1)
 
-        addresses_df = addresses_df.drop(
-            columns=["N_SQ_AD", "N_VOIE", "C_SUF1", "C_SUF2", "C_SUF3", "L_ADR"]
-        )
+        addresses_df = addresses_df.drop(columns=["N_SQ_AD", "N_VOIE", "C_SUF1", "C_SUF2", "C_SUF3", "L_ADR"])
 
-        logger.info(
-            f"Inserting {len(addresses_df)} processed address records to database"
-        )
+        logger.info(f"Inserting {len(addresses_df)} processed address records to database")
         insert_addresses_informations(addresses_df, batch_size)
         logger.info("Address information extraction completed successfully")
 
