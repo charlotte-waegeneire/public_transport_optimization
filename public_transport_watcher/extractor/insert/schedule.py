@@ -3,7 +3,8 @@ from logging import getLogger
 import pandas as pd
 from sqlalchemy.orm import sessionmaker
 
-from public_transport_watcher.db.models import Schedule
+from public_transport_watcher.db.models import Schedule, TransportStation, Transport
+
 from public_transport_watcher.utils import get_engine
 
 logger = getLogger()
@@ -27,13 +28,20 @@ def insert_schedule_data(df: pd.DataFrame) -> None:
     session = Session()
 
     try:
-        existing_station_ids = {id for (id,) in session.query(Schedule.station_id).distinct().all()}
+        existing_station_ids = {id for (id,) in session.query(TransportStation.id).distinct().all()}
+
         initial_len = len(df)
         df = df[df["stop_id"].isin(existing_station_ids)]
         filtered_len = len(df)
         logger.info(
             f"Filtered schedule DataFrame: {initial_len - filtered_len} rows excluded due to missing station_id."
         )
+
+        existing_transport_ids = {id for (id,) in session.query(Transport.id).distinct().all()}
+
+        before_len = len(df)
+        df = df[df["line_numeric_id"].isin(existing_transport_ids)]
+        logger.info(f"Filtered {before_len - len(df)} rows due to missing transport_id.")
 
         inserted = 0
         for _, row in df.iterrows():

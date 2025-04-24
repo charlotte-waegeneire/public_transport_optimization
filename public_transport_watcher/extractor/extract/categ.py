@@ -20,3 +20,9 @@ def extract_categ_data() -> pd.DataFrame:
     except Exception as e:
         logger.error(f"Failed to extract transport categories: {e}")
         return pd.DataFrame()
+
+df_categ = extract_categ_data()
+logger.info(f"Extracted categories data: {df_categ.shape}")
+if df_categ.empty:
+    logger.warning("No categories data extracted.")
+

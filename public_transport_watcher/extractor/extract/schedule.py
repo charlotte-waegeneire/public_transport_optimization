@@ -8,9 +8,9 @@ logger = get_logger()
 
 def _extract_gtfs_data() -> dict[str, pd.DataFrame]:
     """
-    Loads GTFS data files: stop_times, trips, and calendar.
+    Loads GTFS data files: stop_times, trips, calendar, and stops.
 
-    Returns a dictionary with the three dataframes.
+    Returns a dictionary with the DataFrames.
     """
     try:
         files = get_datalake_file(data_category="schedule", folder="2025", subfolder="april")
@@ -18,12 +18,19 @@ def _extract_gtfs_data() -> dict[str, pd.DataFrame]:
         stop_times_file = next(f for f in files if f.endswith("stop_times.txt"))
         trips_file = next(f for f in files if f.endswith("trips.txt"))
         calendar_file = next(f for f in files if f.endswith("calendar.txt"))
+        stops_file = next(f for f in files if f.endswith("stops.txt"))
 
         df_stop_times = pd.read_csv(stop_times_file)
         df_trips = pd.read_csv(trips_file)
         df_calendar = pd.read_csv(calendar_file)
+        df_stops = pd.read_csv(stops_file)
 
-        return {"stop_times": df_stop_times, "trips": df_trips, "calendar": df_calendar}
+        return {
+            "stop_times": df_stop_times,
+            "trips": df_trips,
+            "calendar": df_calendar,
+            "stops": df_stops,
+        }
 
     except (StopIteration, FileNotFoundError, pd.errors.ParserError) as e:
         logger.error(f"Failed to load GTFS data: {e}")
@@ -33,7 +40,7 @@ def _extract_gtfs_data() -> dict[str, pd.DataFrame]:
 def extract_schedule_data() -> pd.DataFrame:
     """
     Processes schedule data from GTFS files and merges them into a single DataFrame.
-    Returns a DataFrame with arrival_timestamp, stop_id, and line_numeric_id.
+    Returns a DataFrame with arrival_timestamp, stop_id (from parent_station), and line_numeric_id.
     """
     gtfs_data = _extract_gtfs_data()
 
@@ -45,16 +52,14 @@ def extract_schedule_data() -> pd.DataFrame:
         df_stop_times = gtfs_data["stop_times"]
         df_trips = gtfs_data["trips"]
         df_calendar = gtfs_data["calendar"]
+        df_stops = gtfs_data["stops"]
 
         df = df_stop_times.merge(df_trips[["trip_id", "route_id", "service_id"]], on="trip_id", how="left")
-        df = df.merge(
-            df_calendar[["service_id", "start_date", "end_date"]],
-            on="service_id",
-            how="left",
-        )
+        df = df.merge(df_calendar[["service_id", "start_date", "end_date"]], on="service_id", how="left")
+
+        df = df.merge(df_stops[["stop_id", "parent_station"]], on="stop_id", how="left")
 
         df["start_date"] = pd.to_datetime(df["start_date"], format="%Y%m%d", errors="coerce")
-        df["end_date"] = pd.to_datetime(df["end_date"], format="%Y%m%d", errors="coerce")
         df["arrival_time"] = pd.to_datetime(df["arrival_time"], format="%H:%M:%S", errors="coerce").dt.time
 
         df["service_date"] = df["start_date"]
@@ -66,11 +71,10 @@ def extract_schedule_data() -> pd.DataFrame:
         )
 
         df["line_numeric_id"] = df["trip_id"].str.extract(r"(\d+)").astype(int)
-        df["stop_id"] = df["stop_id"].str.extract(r"(\d+)").astype(int)
+
+        df["stop_id"] = df["parent_station"].str.extract(r"(\d+)").astype(float).astype("Int64")
 
         df = df[["arrival_timestamp", "stop_id", "line_numeric_id"]].dropna()
-
-        print(df.head())
 
         return df
 

@@ -1,6 +1,5 @@
 import pandas as pd
 from sqlalchemy.orm import sessionmaker
-
 from public_transport_watcher.db.models import Categ
 from public_transport_watcher.logging_config import get_logger
 from public_transport_watcher.utils import get_engine
@@ -25,8 +24,10 @@ def insert_transport_modes(df: pd.DataFrame) -> None:
                 exists = session.query(Categ).filter(Categ.name == mode).first()
                 if exists:
                     continue
+
                 session.add(Categ(name=mode))
                 inserted += 1
+                logger.info(f"Insertion du mode : {mode}")
             except Exception as row_error:
                 logger.error(f"Error processing mode '{mode}': {row_error}")
                 continue
