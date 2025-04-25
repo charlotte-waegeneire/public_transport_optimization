@@ -10,7 +10,6 @@ from typing import Sequence, Union
 
 from alembic import op
 
-
 # revision identifiers, used by Alembic.
 revision: str = "185a77c98a35"
 down_revision: Union[str, None] = "e0deb01a69ec"
@@ -29,9 +28,7 @@ def upgrade():
         schema="transport",
     )
 
-    op.create_index(
-        "ix_transport_traffic_station_id", "traffic", ["station_id"], schema="transport"
-    )
+    op.create_index("ix_transport_traffic_station_id", "traffic", ["station_id"], schema="transport")
     op.create_index(
         "ix_transport_traffic_time_bin_id",
         "traffic",
@@ -51,15 +48,9 @@ def upgrade():
 def downgrade():
     """Downgrade schema."""
     op.drop_index("ix_transport_station_id", table_name="station", schema="transport")
-    op.drop_index(
-        "ix_transport_time_bin_timestamps", table_name="time_bin", schema="transport"
-    )
-    op.drop_index(
-        "ix_transport_traffic_station_id", table_name="traffic", schema="transport"
-    )
-    op.drop_index(
-        "ix_transport_traffic_time_bin_id", table_name="traffic", schema="transport"
-    )
+    op.drop_index("ix_transport_time_bin_timestamps", table_name="time_bin", schema="transport")
+    op.drop_index("ix_transport_traffic_station_id", table_name="traffic", schema="transport")
+    op.drop_index("ix_transport_traffic_time_bin_id", table_name="traffic", schema="transport")
     op.drop_index(
         "uix_transport_traffic_station_time_bin",
         table_name="traffic",

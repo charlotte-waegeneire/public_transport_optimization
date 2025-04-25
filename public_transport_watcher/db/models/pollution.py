@@ -1,7 +1,7 @@
 from sqlalchemy import Column, Float, ForeignKey, Integer, String
 from sqlalchemy.orm import relationship
 
-from public_transport_watcher.db.models.base import Base, TimeBinBase, StationBase
+from public_transport_watcher.db.models.base import Base, StationBase, TimeBinBase
 
 pollution_schema = "pollution"
 
@@ -25,12 +25,8 @@ class Measure(Base):
     __table_args__ = {"schema": pollution_schema}
 
     id = Column(Integer, primary_key=True)
-    station_id = Column(
-        Integer, ForeignKey(f"{pollution_schema}.station.id"), nullable=False
-    )
-    time_bin_id = Column(
-        Integer, ForeignKey(f"{pollution_schema}.time_bin.id"), nullable=False
-    )
+    station_id = Column(Integer, ForeignKey(f"{pollution_schema}.station.id"), nullable=False)
+    time_bin_id = Column(Integer, ForeignKey(f"{pollution_schema}.time_bin.id"), nullable=False)
 
     station = relationship("PollutionStation", back_populates="measures")
     time_bin = relationship("PollutionTimeBin", back_populates="measures")
@@ -52,12 +48,8 @@ class Sensor(Base):
     __table_args__ = {"schema": pollution_schema}
 
     id = Column(Integer, primary_key=True)
-    measure_id = Column(
-        Integer, ForeignKey(f"{pollution_schema}.measure.id"), nullable=False
-    )
-    unity_id = Column(
-        Integer, ForeignKey(f"{pollution_schema}.unity.id"), nullable=False
-    )
+    measure_id = Column(Integer, ForeignKey(f"{pollution_schema}.measure.id"), nullable=False)
+    unity_id = Column(Integer, ForeignKey(f"{pollution_schema}.unity.id"), nullable=False)
     value = Column(Float, nullable=False)
 
     measure = relationship("Measure", back_populates="sensors")

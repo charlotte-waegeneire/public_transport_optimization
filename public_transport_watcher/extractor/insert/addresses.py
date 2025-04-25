@@ -1,18 +1,17 @@
 from typing import Dict, Tuple
-import pandas as pd
-from sqlalchemy.orm import Session
-from sqlalchemy.exc import IntegrityError
 
-from public_transport_watcher.db.models.geography import Street, Address
-from public_transport_watcher.utils import get_engine
+import pandas as pd
+from sqlalchemy.exc import IntegrityError
+from sqlalchemy.orm import Session
+
+from public_transport_watcher.db.models.geography import Address, Street
 from public_transport_watcher.logging_config import get_logger
+from public_transport_watcher.utils import get_engine
 
 logger = get_logger()
 
 
-def insert_addresses_informations(
-    addresses_df: pd.DataFrame, batch_size: int = 1000
-) -> None:
+def insert_addresses_informations(addresses_df: pd.DataFrame, batch_size: int = 1000) -> None:
     """
     Sauvegarde les adresses extraites dans la base de données.
 
@@ -29,19 +28,13 @@ def insert_addresses_informations(
     logger.info(f"Created/retrieved {len(street_id_mapping)} unique streets")
 
     logger.info("Creating addresses...")
-    addresses_added = _create_addresses(
-        engine, addresses_df, street_id_mapping, batch_size
-    )
+    addresses_added = _create_addresses(engine, addresses_df, street_id_mapping, batch_size)
     logger.info(f"Successfully inserted {addresses_added} addresses")
 
 
-def _create_streets(
-    engine, addresses_df: pd.DataFrame, batch_size: int
-) -> Dict[Tuple[str, int], int]:
+def _create_streets(engine, addresses_df: pd.DataFrame, batch_size: int) -> Dict[Tuple[str, int], int]:
     streets_df = addresses_df[["street_name", "C_AR"]].drop_duplicates()
-    streets_df = streets_df.rename(
-        columns={"street_name": "name", "C_AR": "arrondissement"}
-    )
+    streets_df = streets_df.rename(columns={"street_name": "name", "C_AR": "arrondissement"})
 
     street_id_mapping = {}
     total_streets = len(streets_df)
@@ -49,9 +42,7 @@ def _create_streets(
     logger.info(f"Processing {total_streets} unique streets")
 
     with Session(engine) as session:
-        existing_streets = session.query(
-            Street.name, Street.arrondissement, Street.id
-        ).all()
+        existing_streets = session.query(Street.name, Street.arrondissement, Street.id).all()
         existing_mapping = {(s.name, s.arrondissement): s.id for s in existing_streets}
 
         streets_existing = len(existing_mapping)
@@ -101,12 +92,8 @@ def _create_addresses(
     logger.info(f"Processing {total_addresses} addresses")
 
     with Session(engine) as session:
-        existing_addresses = session.query(
-            Address.street_id, Address.number, Address.longitude, Address.latitude
-        ).all()
-        existing_set = {
-            (a.street_id, a.number, a.longitude, a.latitude) for a in existing_addresses
-        }
+        existing_addresses = session.query(Address.street_id, Address.number, Address.longitude, Address.latitude).all()
+        existing_set = {(a.street_id, a.number, a.longitude, a.latitude) for a in existing_addresses}
 
         addresses_existing = len(existing_set)
         addresses_to_create = []
@@ -140,9 +127,7 @@ def _create_addresses(
             session.bulk_save_objects(batch)
             session.commit()
             addresses_created += len(batch)
-            logger.debug(
-                f"Committed address batch {i // batch_size + 1}: {len(batch)} addresses created"
-            )
+            logger.debug(f"Committed address batch {i // batch_size + 1}: {len(batch)} addresses created")
 
     logger.info(
         f"Addresses processing completed: {addresses_created} new addresses created, "
@@ -151,14 +136,8 @@ def _create_addresses(
     return addresses_created
 
 
-def _get_or_create_street(
-    session: Session, name: str, arrondissement: int
-) -> Tuple[bool, int]:
-    existing_street = (
-        session.query(Street)
-        .filter_by(name=name, arrondissement=arrondissement)
-        .first()
-    )
+def _get_or_create_street(session: Session, name: str, arrondissement: int) -> Tuple[bool, int]:
+    existing_street = session.query(Street).filter_by(name=name, arrondissement=arrondissement).first()
 
     if existing_street:
         return False, existing_street.id
@@ -171,34 +150,20 @@ def _get_or_create_street(
         return True, new_street.id
     except IntegrityError:
         session.rollback()
-        logger.warning(
-            f"IntegrityError while creating street: {name} (arr. {arrondissement})"
-        )
-        existing_street = (
-            session.query(Street)
-            .filter_by(name=name, arrondissement=arrondissement)
-            .first()
-        )
+        logger.warning(f"IntegrityError while creating street: {name} (arr. {arrondissement})")
+        existing_street = session.query(Street).filter_by(name=name, arrondissement=arrondissement).first()
         return False, existing_street.id
 
 
-def _address_exists(
-    session: Session, street_id: int, number: str, longitude: float, latitude: float
-) -> bool:
+def _address_exists(session: Session, street_id: int, number: str, longitude: float, latitude: float) -> bool:
     return (
         session.query(Address)
-        .filter_by(
-            street_id=street_id, number=number, longitude=longitude, latitude=latitude
-        )
+        .filter_by(street_id=street_id, number=number, longitude=longitude, latitude=latitude)
         .first()
         is not None
     )
 
 
-def _create_address(
-    session: Session, street_id: int, number: str, longitude: float, latitude: float
-) -> None:
-    new_address = Address(
-        street_id=street_id, number=number, longitude=longitude, latitude=latitude
-    )
+def _create_address(session: Session, street_id: int, number: str, longitude: float, latitude: float) -> None:
+    new_address = Address(street_id=street_id, number=number, longitude=longitude, latitude=latitude)
     session.add(new_address)

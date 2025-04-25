@@ -6,10 +6,10 @@ from .get_query_result import get_query_result
 from .get_trafic_api import fetch_generic_api_data
 
 __all__ = [
+    "fetch_generic_api_data",
     "get_credentials",
     "get_datalake_file",
     "get_engine",
     "get_env_variable",
     "get_query_result",
-    "fetch_generic_api_data",
 ]

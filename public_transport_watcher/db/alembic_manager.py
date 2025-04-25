@@ -45,9 +45,7 @@ def show_history():
 if __name__ == "__main__":
     # Utilisation example
     if len(sys.argv) < 2:
-        print(
-            "Usage: python -m public_transport_watcher.db.alembic_manager [command] [args]"
-        )
+        print("Usage: python -m public_transport_watcher.db.alembic_manager [command] [args]")
         print("Commands: generate, upgrade, downgrade, current, history")
         sys.exit(1)
 

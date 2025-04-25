@@ -2,13 +2,21 @@ from public_transport_watcher.extractor.configuration import EXTRACTION_CONFIG
 from public_transport_watcher.extractor.extract import (
     extract_addresses_informations,
     extract_air_quality_data,
+    extract_categ_data,
     extract_navigo_validations,
+    extract_schedule_data,
     extract_stations_informations,
-    extract_weather_data,
-    process_traffic_data,
+    extract_traffic_data,
+    extract_transport_data,
 )
 from public_transport_watcher.extractor.extract.real_time import (
+    extract_weather_data,
     get_latest_air_quality_csv,
+)
+from public_transport_watcher.extractor.insert import (
+    insert_schedule_data,
+    insert_transport_lines,
+    insert_transport_modes,
 )
 from public_transport_watcher.logging_config import get_logger
 from public_transport_watcher.utils import get_query_result
@@ -39,7 +47,7 @@ class Extractor:
         extract_addresses_informations(batch_size)
 
     def extract_traffic_data(self):
-        return process_traffic_data()
+        return extract_traffic_data()
 
     def extract_air_quality_data(self):
         get_latest_air_quality_csv()
@@ -52,12 +60,27 @@ class Extractor:
         config = self.extract_config.get("weather", {})
         return extract_weather_data(config)
 
+    def extract_categ_data(self):
+        df = extract_categ_data()
+        insert_transport_modes(df)
+
+    def extract_transport_data(self):
+        df = extract_transport_data()
+        insert_transport_lines(df)
+
+    def extract_schedule_data(self):
+        df = extract_schedule_data()
+        insert_schedule_data(df)
+
 
 if __name__ == "__main__":
     extractor = Extractor()
     extractor.extract_stations_data()
     extractor.extract_navigo_validations()
     extractor.extract_addresses_informations()
-    traffic_data = extractor.extract_traffic_data()
+    extractor.extract_categ_data()
+    extractor.extract_transport_data()
+    extractor.extract_schedule_data()
+    traffic_data = extractor.extract_traffic_data()  # needs to be scheduled
     air_quality_data = extractor.extract_air_quality_data()  # needs to be scheduled
     weather_data = extractor.extract_weather_data()  # needs to be scheduled

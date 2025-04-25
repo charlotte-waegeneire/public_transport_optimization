@@ -4,8 +4,9 @@ from typing import Dict, List, Optional, Union
 
 import pandas as pd
 
-from .get_engine import get_engine
 from public_transport_watcher.extractor.sql import get_sql_query
+
+from .get_engine import get_engine
 
 
 def get_query_result(

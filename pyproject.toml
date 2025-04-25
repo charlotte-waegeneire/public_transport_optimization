@@ -3,10 +3,6 @@ requires = ["setuptools>=42.0", "wheel"]
 build-backend = "setuptools.build_meta"
 
 [tool.ruff]
-# Enable Pyflakes (`F`), isort (`I`), and a subset of the pycodestyle (`E`) codes
-select = ["E", "F", "I"]
-# Ignore line length violations
-ignore = ["E501"]
 # Maximum line length
 line-length = 120
 # Exclude directories
@@ -17,13 +13,21 @@ exclude = [
     "sandbox",
     "__pycache__",
 ]
+
+[tool.ruff.lint]
+# Enable Pyflakes (`F`), isort (`I`), and a subset of the pycodestyle (`E`) codes
+select = ["E", "F", "I"]
+# Ignore line length violations
+ignore = ["E501"]
 # Allow autofix for all enabled rules (when `--fix` is passed)
 fixable = ["E", "F", "I"]
 # Allow unused variables when underscore-prefixed
 dummy-variable-rgx = "^(_+|(_+[a-zA-Z0-9_]*[a-zA-Z0-9]+?))$"
 
-[tool.ruff.isort]
+[tool.ruff.lint.isort]
 known-first-party = ["public_transport_watcher"]
+# Force alphabetical sorting within sections
+force-sort-within-sections = true
 
 [tool.ruff.format]
 # Enable auto-formatting

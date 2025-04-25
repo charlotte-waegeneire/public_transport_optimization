@@ -1,9 +1,9 @@
+from datetime import datetime
 import os
 import re
-from datetime import datetime
 
-import requests
 from bs4 import BeautifulSoup
+import requests
 
 from public_transport_watcher.logging_config import get_logger
 from public_transport_watcher.utils import get_env_variable
@@ -29,9 +29,7 @@ def get_latest_air_quality_csv() -> str | None:
 
         soup = BeautifulSoup(response.text, "html.parser")
 
-        csv_links = [
-            link for link in soup.find_all("a") if link.get("href", "").endswith(".csv")
-        ]
+        csv_links = [link for link in soup.find_all("a") if link.get("href", "").endswith(".csv")]
 
         if not csv_links:
             logger.error("No CSV files found on the page.")
@@ -50,9 +48,7 @@ def get_latest_air_quality_csv() -> str | None:
                 size_match = re.search(r"(\d+)$", line_text.strip())
                 size = int(size_match.group(1)) if size_match else 0
 
-                files_info.append(
-                    {"name": link.get("href"), "date": date_obj, "size": size}
-                )
+                files_info.append({"name": link.get("href"), "date": date_obj, "size": size})
 
         if not files_info:
             logger.error("Failed to extract file date information.")

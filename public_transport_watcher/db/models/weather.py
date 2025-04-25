@@ -1,7 +1,7 @@
-from sqlalchemy import Column, Integer, Float, ForeignKey
+from sqlalchemy import Column, Float, ForeignKey, Integer
 from sqlalchemy.orm import relationship
 
-from public_transport_watcher.db.models.base import Base, TimeBinBase, StationBase
+from public_transport_watcher.db.models.base import Base, StationBase, TimeBinBase
 
 weather_schema = "weather"
 
@@ -25,12 +25,8 @@ class WeatherMeasure(Base):
     __table_args__ = {"schema": weather_schema}
 
     id = Column(Integer, primary_key=True)
-    station_id = Column(
-        Integer, ForeignKey(f"{weather_schema}.station.id"), nullable=False
-    )
-    time_bin_id = Column(
-        Integer, ForeignKey(f"{weather_schema}.time_bin.id"), nullable=False
-    )
+    station_id = Column(Integer, ForeignKey(f"{weather_schema}.station.id"), nullable=False)
+    time_bin_id = Column(Integer, ForeignKey(f"{weather_schema}.time_bin.id"), nullable=False)
     temperature = Column(Float, nullable=True)
 
     station = relationship("WeatherStation", back_populates="measures")

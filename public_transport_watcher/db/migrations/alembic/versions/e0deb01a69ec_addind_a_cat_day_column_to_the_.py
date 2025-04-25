@@ -26,18 +26,16 @@ def upgrade() -> None:
     enum_name = "cat_day"
     enum_schema = "transport"
 
-    op.execute(
-        f"CREATE TYPE {enum_schema}.{enum_name} AS ENUM ({', '.join(repr(v) for v in enum_values)})"
-    )
+    op.execute(f"CREATE TYPE {enum_schema}.{enum_name} AS ENUM ({', '.join(repr(v) for v in enum_values)})")
 
-    op.add_column(
-        "time_bin", sa.Column("cat_day", sa.String(), nullable=True), schema="transport"
-    )
-    op.execute("""
+    op.add_column("time_bin", sa.Column("cat_day", sa.String(), nullable=True), schema="transport")
+    op.execute(
+        """
         ALTER TABLE transport.time_bin 
         ALTER COLUMN cat_day TYPE transport.cat_day 
         USING cat_day::text::transport.cat_day
-    """)
+    """
+    )
 
     op.drop_column("station", "wording", schema="weather")
     op.drop_column("station", "wording", schema="pollution")
@@ -46,21 +44,17 @@ def upgrade() -> None:
 
 def downgrade() -> None:
     """Downgrade schema."""
-    op.add_column(
-        "station", sa.Column("wording", sa.String(), nullable=True), schema="weather"
-    )
-    op.add_column(
-        "station", sa.Column("wording", sa.String(), nullable=True), schema="pollution"
-    )
-    op.add_column(
-        "station", sa.Column("wording", sa.String(), nullable=True), schema="transport"
-    )
+    op.add_column("station", sa.Column("wording", sa.String(), nullable=True), schema="weather")
+    op.add_column("station", sa.Column("wording", sa.String(), nullable=True), schema="pollution")
+    op.add_column("station", sa.Column("wording", sa.String(), nullable=True), schema="transport")
 
-    op.execute("""
+    op.execute(
+        """
         ALTER TABLE transport.time_bin 
         ALTER COLUMN cat_day TYPE VARCHAR 
         USING cat_day::text
-    """)
+    """
+    )
 
     op.drop_column("time_bin", "cat_day", schema="transport")
     op.execute("DROP TYPE IF EXISTS transport.cat_day")
