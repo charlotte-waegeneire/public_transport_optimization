@@ -1,5 +1,5 @@
 from sqlalchemy import Column, Time, Enum, ForeignKey, Integer, MetaData, String
-from sqlalchemy.orm import relationship
+from sqlalchemy.orm import relationship, remote, foreign
 
 from public_transport_watcher.db.models.base import Base, StationBase, TimeBinBase
 from public_transport_watcher.db.models.enums import DayCategoryEnum
@@ -42,6 +42,7 @@ class Categ(Base):
 
     transports = relationship("Transport", back_populates="type")
 
+
 class Schedule(Base):
     __tablename__ = "schedule"
     __table_args__ = {"schema": transport_schema}
@@ -52,13 +53,20 @@ class Schedule(Base):
     next_station_id = Column(Integer, ForeignKey(f"{transport_schema}.station.id"), nullable=True)
     transport_id = Column(Integer, ForeignKey(f"{transport_schema}.transport.id"), nullable=False)
 
-    station = relationship("TransportStation", back_populates="schedules")
-    next_station = relationship("TransportStation", back_populates="schedules")
+    station = relationship(
+        "TransportStation",
+        primaryjoin="Schedule.station_id == TransportStation.id",
+        back_populates="schedules"
+    )
+
+    next_station = relationship(
+        "TransportStation",
+        primaryjoin="Schedule.next_station_id == TransportStation.id",
+        back_populates="next_schedules"
+    )
+
     transport = relationship("Transport", back_populates="schedules")
 
-
-TransportStation.schedules = relationship("Schedule", back_populates="station")
-TransportStation.traffic_data = relationship("Traffic", back_populates="station")
 
 class Traffic(Base):
     __tablename__ = "traffic"
@@ -71,3 +79,18 @@ class Traffic(Base):
 
     station = relationship("TransportStation", back_populates="traffic_data")
     time_bin = relationship("TransportTimeBin", back_populates="traffic_data")
+
+
+TransportStation.schedules = relationship(
+    "Schedule",
+    primaryjoin="TransportStation.id == Schedule.station_id",
+    back_populates="station"
+)
+
+TransportStation.next_schedules = relationship(
+    "Schedule",
+    primaryjoin="TransportStation.id == Schedule.next_station_id",
+    back_populates="next_station"
+)
+
+TransportStation.traffic_data = relationship("Traffic", back_populates="station")
