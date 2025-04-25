@@ -1,4 +1,4 @@
-from sqlalchemy import Column, DateTime, Enum, ForeignKey, Integer, MetaData, String
+from sqlalchemy import Column, Time, Enum, ForeignKey, Integer, MetaData, String
 from sqlalchemy.orm import relationship
 
 from public_transport_watcher.db.models.base import Base, StationBase, TimeBinBase
@@ -42,23 +42,23 @@ class Categ(Base):
 
     transports = relationship("Transport", back_populates="type")
 
-
 class Schedule(Base):
     __tablename__ = "schedule"
     __table_args__ = {"schema": transport_schema}
 
     id = Column(Integer, primary_key=True)
-    timestamp = Column(DateTime, nullable=False)
+    timestamp = Column(Time, nullable=False)
     station_id = Column(Integer, ForeignKey(f"{transport_schema}.station.id"), nullable=False)
+    next_station_id = Column(Integer, ForeignKey(f"{transport_schema}.station.id"), nullable=True)
     transport_id = Column(Integer, ForeignKey(f"{transport_schema}.transport.id"), nullable=False)
 
     station = relationship("TransportStation", back_populates="schedules")
+    next_station = relationship("TransportStation", back_populates="schedules")
     transport = relationship("Transport", back_populates="schedules")
 
 
 TransportStation.schedules = relationship("Schedule", back_populates="station")
 TransportStation.traffic_data = relationship("Traffic", back_populates="station")
-
 
 class Traffic(Base):
     __tablename__ = "traffic"
