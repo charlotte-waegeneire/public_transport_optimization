@@ -1,5 +1,6 @@
 from typing import Dict, List, Tuple, Union
 
+from holidays import France
 import pandas as pd
 
 from public_transport_watcher.extractor.configuration import COLUMN_MAPPING
@@ -8,6 +9,7 @@ from public_transport_watcher.logging_config import get_logger
 from public_transport_watcher.utils import get_datalake_file
 
 logger = get_logger()
+_HOLIDAYS = France(years=[2023, 2024]).keys()
 
 _COLUMN_MAPPING = COLUMN_MAPPING["navigo"]
 
@@ -76,7 +78,7 @@ def _process_period_data(year: int, period: str, batch_size: int) -> None:
         logger.info(f"Processing data for {year}/{period}")
 
         try:
-            profiles_df = pd.read_csv(profiles_file, sep=";", parse_dates=False)
+            profiles_df = pd.read_csv(profiles_file, sep=";", parse_dates=False, encoding="latin1")
         except Exception as e:
             logger.error(f"Error loading profiles file: {str(e)}")
             return
@@ -89,7 +91,9 @@ def _process_period_data(year: int, period: str, batch_size: int) -> None:
         chunks_processed = 0
         total_records = 0
 
-        for validations_chunk in pd.read_csv(validations_file, sep=";", chunksize=batch_size, parse_dates=False):
+        for validations_chunk in pd.read_csv(
+            validations_file, sep=";", encoding="latin1", chunksize=batch_size, parse_dates=False
+        ):
             validations_chunk.columns = _COLUMN_MAPPING["validations"]
             chunks_processed += 1
             records_in_chunk = len(validations_chunk)
@@ -193,11 +197,10 @@ def _compute_hourly_validations(validations_df: pd.DataFrame, profiles_df: pd.Da
 
 
 def _determine_day_type(row: pd.Series) -> str:
-    day_of_week = row["jour"].dayofweek
-    day_of_week_mapping = {
-        5: "SAHV",  # Saturday
-        6: "DIJFP",  # Sunday
-    }
-    # Default to JOHV for weekdays
-    # TODO holidays and other special days
-    return day_of_week_mapping.get(day_of_week, "JOHV")
+    jour = row["jour"]
+    day_of_week = jour.dayofweek
+
+    if jour in _HOLIDAYS or day_of_week == 6:
+        return "DIJFP"
+
+    return "SAHV" if day_of_week == 5 else "JOHV"

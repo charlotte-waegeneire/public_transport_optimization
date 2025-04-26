@@ -1,5 +1,5 @@
 import logging
-from logging.handlers import RotatingFileHandler
+from logging.handlers import TimedRotatingFileHandler
 import os
 import sys
 
@@ -8,7 +8,6 @@ LOG_FILE = os.path.join(LOG_DIR, "transport_watcher.log")
 
 os.makedirs(LOG_DIR, exist_ok=True)
 
-# Configure logger once at module level
 logger = logging.getLogger("public_transport_watcher")
 if not logger.handlers:  # Only configure if not already done
     logger.setLevel(logging.DEBUG)
@@ -16,8 +15,9 @@ if not logger.handlers:  # Only configure if not already done
     console_handler = logging.StreamHandler(sys.stdout)
     console_handler.setLevel(logging.INFO)
 
-    file_handler = RotatingFileHandler(LOG_FILE, maxBytes=10485760, backupCount=5)
+    file_handler = TimedRotatingFileHandler(LOG_FILE, when="midnight", interval=1, backupCount=30)
     file_handler.setLevel(logging.DEBUG)
+    file_handler.suffix = "%Y-%m-%d"
 
     console_format = logging.Formatter("%(levelname)s - %(message)s")
     file_format = logging.Formatter("%(asctime)s - %(name)s - %(levelname)s - %(message)s")
