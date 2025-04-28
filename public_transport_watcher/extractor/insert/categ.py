@@ -1,5 +1,6 @@
 import pandas as pd
 from sqlalchemy.orm import sessionmaker
+
 from public_transport_watcher.db.models import Categ
 from public_transport_watcher.logging_config import get_logger
 from public_transport_watcher.utils import get_engine

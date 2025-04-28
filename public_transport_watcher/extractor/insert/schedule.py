@@ -1,12 +1,11 @@
-from logging import getLogger
-
 import pandas as pd
 from sqlalchemy.orm import sessionmaker
 
 from public_transport_watcher.db.models import Schedule, Transport, TransportStation
+from public_transport_watcher.logging_config import get_logger
 from public_transport_watcher.utils import get_engine
 
-logger = getLogger()
+logger = get_logger()
 
 
 def insert_schedule_data(df: pd.DataFrame, config: dict) -> None:
