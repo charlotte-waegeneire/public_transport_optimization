@@ -50,7 +50,7 @@ class Schedule(Base):
     id = Column(Integer, primary_key=True)
     timestamp = Column(Time, nullable=False)
     station_id = Column(Integer, ForeignKey(f"{transport_schema}.station.id"), nullable=False)
-    next_station_id = Column(Integer, ForeignKey(f"{transport_schema}.station.id"), nullable=True)
+    terminus_station_id = Column(Integer, ForeignKey(f"{transport_schema}.station.id"), nullable=True)
     transport_id = Column(Integer, ForeignKey(f"{transport_schema}.transport.id"), nullable=False)
 
     station = relationship(
@@ -59,10 +59,10 @@ class Schedule(Base):
         back_populates="schedules"
     )
 
-    next_station = relationship(
+    terminus_station = relationship(
         "TransportStation",
-        primaryjoin="Schedule.next_station_id == TransportStation.id",
-        back_populates="next_schedules"
+        primaryjoin="Schedule.terminus_station_id == TransportStation.id",
+        back_populates="terminus_schedules"
     )
 
     transport = relationship("Transport", back_populates="schedules")
@@ -87,10 +87,10 @@ TransportStation.schedules = relationship(
     back_populates="station"
 )
 
-TransportStation.next_schedules = relationship(
+TransportStation.terminus_schedules = relationship(
     "Schedule",
-    primaryjoin="TransportStation.id == Schedule.next_station_id",
-    back_populates="next_station"
+    primaryjoin="TransportStation.id == Schedule.terminus_station_id",
+    back_populates="terminus_station"
 )
 
 TransportStation.traffic_data = relationship("Traffic", back_populates="station")

@@ -1,4 +1,4 @@
-"""added_next_stop_and_change_time_format
+"""added_terminus_station_id_and_change_time_format
 
 Revision ID: a8ff31fc08d1
 Revises: bb79540d0539
@@ -21,15 +21,15 @@ transport_schema = "transport"
 def upgrade():
     op.add_column(
         'schedule',
-        sa.Column('next_station_id', sa.Integer(), nullable=True),
+        sa.Column('terminus_station_id', sa.Integer(), nullable=True),
         schema=transport_schema
     )
 
 
     op.create_foreign_key(
-        'fk_schedule_next_station',
+        'fk_schedule_terminus_station',
         'schedule', 'station',
-        ['next_station_id'], ['id'],
+        ['terminus_station_id'], ['id'],
         source_schema=transport_schema,
         referent_schema=transport_schema
     )
@@ -82,9 +82,9 @@ def downgrade():
     )
 
     op.drop_constraint(
-        'fk_schedule_next_station',
+        'fk_schedule_terminus_station',
         'schedule',
         schema=transport_schema
     )
 
-    op.drop_column('schedule', 'next_station_id', schema=transport_schema)
+    op.drop_column('schedule', 'terminus_station_id', schema=transport_schema)
