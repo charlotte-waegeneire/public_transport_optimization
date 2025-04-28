@@ -44,7 +44,6 @@ def insert_schedule_data(df: pd.DataFrame, config: dict) -> None:
         skipped_errors = 0
 
         total_chunks = (len(df) + chunk_size - 1) // chunk_size
-
         logger.info(f"Processing {total_chunks} chunks of {chunk_size} rows each")
 
         for chunk_idx, chunk_start in enumerate(range(0, len(df), chunk_size)):
