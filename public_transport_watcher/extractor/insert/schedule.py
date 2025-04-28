@@ -9,7 +9,7 @@ from public_transport_watcher.utils import get_engine
 logger = getLogger()
 
 
-def insert_schedule_data(df: pd.DataFrame) -> None:
+def insert_schedule_data(df: pd.DataFrame, config: dict) -> None:
     """
     Insert schedule data into the database.
 
@@ -19,6 +19,7 @@ def insert_schedule_data(df: pd.DataFrame) -> None:
         DataFrame containing schedule data to be inserted.
     """
     logger.info("Inserting schedule data into the database...")
+    chunk_size = config.get("batch_size", 5000)
 
     if df.empty:
         logger.warning("Empty schedule DataFrame. Nothing to insert.")
@@ -30,48 +31,58 @@ def insert_schedule_data(df: pd.DataFrame) -> None:
 
     try:
         existing_station_ids = {id for (id,) in session.query(TransportStation.id).distinct().all()}
-        logger.info(f"Found {len(existing_station_ids)} existing station IDs.")
-
-        initial_len = len(df)
         df = df[df["stop_id"].isin(existing_station_ids)]
-        filtered_len = len(df)
-        excluded_rows = initial_len - filtered_len
-        if excluded_rows > 0:
-            logger.info(f"Filtered schedule DataFrame: {excluded_rows} rows excluded due to missing station_id.")
 
         existing_transport_ids = {id for (id,) in session.query(Transport.id).distinct().all()}
-
-        before_len = len(df)
         df = df[df["line_numeric_id"].isin(existing_transport_ids)]
-        excluded_rows = before_len - len(df)
-        if excluded_rows > 0:
-            logger.info(f"Filtered schedule DataFrame: {excluded_rows} rows excluded due to missing transport_id.")
+
+        logger.debug(f"Preparing to insert {len(df)} rows")
 
         inserted = 0
-        for _, row in df.iterrows():
-            if pd.isnull(row["arrival_timestamp"]):
-                continue
+        skipped_timestamp = 0
+        skipped_next_station = 0
+        skipped_errors = 0
 
-            # Validate if terminus_station_id exists in the database
-            if pd.notnull(row["terminus_station_id"]) and row["terminus_station_id"] not in existing_station_ids:
-                logger.warning(f"Skipping schedule with invalid terminus_station_id {row['terminus_station_id']}.")
-                continue
+        total_chunks = (len(df) + chunk_size - 1) // chunk_size
 
-            try:
-                schedule = Schedule(
-                    timestamp=row["arrival_timestamp"],
-                    station_id=int(row["stop_id"]),
-                    terminus_station_id=int(row["terminus_station_id"]) if pd.notnull(row["terminus_station_id"]) else None,
-                    transport_id=int(row["line_numeric_id"]),
-                )
-                session.add(schedule)
-                inserted += 1
-            except Exception as row_error:
-                logger.error(f"Error inserting schedule row: {row_error}")
-                continue
+        logger.info(f"Processing {total_chunks} chunks of {chunk_size} rows each")
 
-        session.commit()
-        logger.info(f"{inserted} schedule(s) inserted into `schedule` table.")
+        for chunk_idx, chunk_start in enumerate(range(0, len(df), chunk_size)):
+            chunk_end = min(chunk_start + chunk_size, len(df))
+            chunk = df.iloc[chunk_start:chunk_end]
+            chunk_inserted = 0
+
+            for _, row in chunk.iterrows():
+                if pd.isnull(row["arrival_timestamp"]):
+                    skipped_timestamp += 1
+                    continue
+
+                if pd.notnull(row["next_station_id"]) and row["next_station_id"] not in existing_station_ids:
+                    skipped_next_station += 1
+                    continue
+
+                try:
+                    schedule = Schedule(
+                        timestamp=row["arrival_timestamp"],
+                        station_id=int(row["stop_id"]),
+                        next_station_id=int(row["next_station_id"]) if pd.notnull(row["next_station_id"]) else None,
+                        transport_id=int(row["line_numeric_id"]),
+                    )
+                    session.add(schedule)
+                    inserted += 1
+                    chunk_inserted += 1
+                except Exception as row_error:
+                    logger.error(f"Error inserting schedule row: {row_error}")
+                    skipped_errors += 1
+                    continue
+
+            session.commit()
+            logger.info(f"Chunk {chunk_idx + 1}/{total_chunks} complete: inserted {chunk_inserted} rows")
+
+        logger.info(f"Insertion complete: {inserted} schedules inserted")
+        logger.debug(
+            f"Skipped rows - null timestamp: {skipped_timestamp}, invalid next_station: {skipped_next_station}, errors: {skipped_errors}"
+        )
 
     except Exception as e:
         session.rollback()

@@ -69,8 +69,9 @@ class Extractor:
         insert_transport_lines(df)
 
     def extract_schedule_data(self):
+        config = self.extract_config.get("schedule", {})
         df = extract_schedule_data()
-        insert_schedule_data(df)
+        insert_schedule_data(df, config)
 
 
 if __name__ == "__main__":

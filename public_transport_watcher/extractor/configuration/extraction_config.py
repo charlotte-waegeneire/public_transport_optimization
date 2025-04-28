@@ -25,4 +25,7 @@ EXTRACTION_CONFIG = {
     "weather": {
         "station": "ME099",
     },
+    "schedule": {
+        "batch_size": 5000,
+    },
 }

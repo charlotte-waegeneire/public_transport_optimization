@@ -61,30 +61,62 @@ def extract_schedule_data() -> pd.DataFrame:
 
         df_stop_times["stop_sequence"] = df_stop_times["stop_sequence"].astype(int)
 
+        if "route_id" in df_trips.columns:
+            logger.debug(f"Sample route_id values: {df_trips['route_id'].sample(min(5, len(df_trips))).tolist()}")
+
         df = df_stop_times.merge(df_trips[["trip_id", "route_id", "service_id"]], on="trip_id", how="left")
         df = df.merge(df_calendar[["service_id", "start_date", "end_date"]], on="service_id", how="left")
         df = df.merge(df_stops[["stop_id", "parent_station"]], on="stop_id", how="left")
+        logger.debug(f"Merged datasets: {df.shape}")
 
         df["start_date"] = pd.to_datetime(df["start_date"], format="%Y%m%d", errors="coerce")
         df["arrival_time"] = pd.to_datetime(df["arrival_time"], format="%H:%M:%S", errors="coerce").dt.time
 
+        logger.debug(
+            f"NaN values - start_date: {df['start_date'].isna().sum()}, arrival_time: {df['arrival_time'].isna().sum()}, parent_station: {df['parent_station'].isna().sum()}"
+        )
+
         df["service_date"] = df["start_date"]
         mask = df["service_date"].notna() & df["arrival_time"].notna()
+        logger.info(f"Rows with valid service_date and arrival_time: {mask.sum()} of {len(df)}")
+
         df.loc[mask, "arrival_timestamp"] = pd.to_datetime(
             df.loc[mask, "service_date"].astype(str) + " " + df.loc[mask, "arrival_time"].astype(str)
         )
         df.loc[~mask, "arrival_timestamp"] = pd.NaT
+        logger.info(f"NaN values in arrival_timestamp: {df['arrival_timestamp'].isna().sum()}")
 
-        df["line_numeric_id"] = df["trip_id"].str.extract(r"(\d+)").astype(int)
+        logger.info("Extracting line numeric IDs from `route_id` and `trip_id`")
+
+        route_pattern = r"C0*(\d+)"
+        df["route_numeric"] = df["route_id"].astype(str).str.extract(route_pattern).astype(float)
+        trip_pattern = r"C0*(\d+)"
+        df["trip_numeric"] = df["trip_id"].astype(str).str.extract(trip_pattern).astype(float)
+        # Extract any sequence of digits from trip_id as last resort
+        df["any_numeric"] = df["trip_id"].astype(str).str.extract(r"(\d+)").astype(float)
+        # Choose the best available ID (prioritize route_id over trip_id over any digits)
+        df["line_numeric_id"] = df["route_numeric"].fillna(df["trip_numeric"]).fillna(df["any_numeric"]).astype("Int64")
+
+        logger.debug(f"IDs from route_id: {df['route_numeric'].notna().sum()}")
+        logger.debug(f"IDs from trip_id pattern: {df['trip_numeric'].notna().sum()}")
+        logger.debug(f"IDs from any numeric: {df['any_numeric'].notna().sum()}")
+        logger.debug(f"Final valid line_numeric_ids: {df['line_numeric_id'].notna().sum()}")
+
+        df = df.drop(columns=["route_numeric", "trip_numeric", "any_numeric"])
+
+        logger.debug(f"Sample parent_station values: {df['parent_station'].sample(min(5, len(df))).tolist()}")
         df["stop_id"] = df["parent_station"].str.extract(r"(\d+)").astype(float).astype("Int64")
 
         df = df.sort_values(["trip_id", "stop_sequence"])
 
         df["next_station_id"] = df.groupby("trip_id")["stop_id"].shift(-1)
 
+        before_dropna = len(df)
         df = df[["arrival_timestamp", "stop_id", "next_station_id", "line_numeric_id"]].dropna(
-            subset=["arrival_timestamp", "stop_id", "line_numeric_id"])
-        print(df.head())
+            subset=["arrival_timestamp", "stop_id", "line_numeric_id"]
+        )
+        after_dropna = len(df)
+        logger.debug(f"After dropna, rows dropped: {before_dropna - after_dropna}, remaining: {after_dropna}")
 
         logger.info("GTFS schedule data processed successfully.")
 
@@ -92,4 +124,5 @@ def extract_schedule_data() -> pd.DataFrame:
 
     except Exception as e:
         logger.error(f"Failed to process GTFS schedule data: {e}")
+        logger.error(f"Error traceback: {str(e)}", exc_info=True)
         return pd.DataFrame()
