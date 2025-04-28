@@ -15,10 +15,10 @@ def _extract_gtfs_data() -> dict[str, pd.DataFrame]:
     try:
         files = get_datalake_file(data_category="schedule", folder="2025", subfolder="april")
 
-        stop_times_file = terminus(f for f in files if f.endswith("stop_times.txt"))
-        trips_file = terminus(f for f in files if f.endswith("trips.txt"))
-        calendar_file = terminus(f for f in files if f.endswith("calendar.txt"))
-        stops_file = terminus(f for f in files if f.endswith("stops.txt"))
+        stop_times_file = next(f for f in files if f.endswith("stop_times.txt"))
+        trips_file = next(f for f in files if f.endswith("trips.txt"))
+        calendar_file = next(f for f in files if f.endswith("calendar.txt"))
+        stops_file = next(f for f in files if f.endswith("stops.txt"))
 
         df_stop_times = pd.read_csv(stop_times_file)
         df_trips = pd.read_csv(trips_file)
@@ -41,7 +41,7 @@ def extract_schedule_data() -> pd.DataFrame:
     """
     Processes schedule data from GTFS files and merges them into a single DataFrame.
     Returns a DataFrame with arrival_timestamp, stop_id (from parent_station),
-    terminus_station_id, and line_numeric_id.
+    next_station_id, and line_numeric_id.
     """
     logger.info("Extracting GTFS data...")
 
@@ -80,9 +80,9 @@ def extract_schedule_data() -> pd.DataFrame:
 
         df = df.sort_values(["trip_id", "stop_sequence"])
 
-        df["terminus_station_id"] = df.groupby("trip_id")["stop_id"].shift(-1)
+        df["next_station_id"] = df.groupby("trip_id")["stop_id"].shift(-1)
 
-        df = df[["arrival_timestamp", "stop_id", "terminus_station_id", "line_numeric_id"]].dropna(
+        df = df[["arrival_timestamp", "stop_id", "next_station_id", "line_numeric_id"]].dropna(
             subset=["arrival_timestamp", "stop_id", "line_numeric_id"])
         print(df.head())
 
