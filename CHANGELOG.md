@@ -11,7 +11,8 @@ MR #8
 ### Fixed
 - `TimedRotatingFileHandler` instead of `RotatingFileHandler` for logging configuration
 - Extraction of `latin-1` encoded files
-- Handling oh holidays for navigo validations extraction
+- Handling holidays for navigo validations extraction
+- Uppercase station names
 
 ## [0.7.0] - 2025-04-17
 MR #7

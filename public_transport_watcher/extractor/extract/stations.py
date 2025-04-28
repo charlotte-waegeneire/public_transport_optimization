@@ -47,6 +47,7 @@ def extract_stations_informations(batch_size: int = 100):
         }
         stations_df = stations_df.rename(columns=columns_mapping)
         stations_df = stations_df.drop_duplicates(subset=["id"])
+        stations_df["name"] = stations_df["name"].str.upper()
 
         logger.info(f"Inserting {len(stations_df)} metro stations to database")
         insert_stations_informations(stations_df, batch_size)
