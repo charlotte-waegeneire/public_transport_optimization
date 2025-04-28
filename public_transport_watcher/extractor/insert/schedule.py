@@ -52,16 +52,16 @@ def insert_schedule_data(df: pd.DataFrame) -> None:
             if pd.isnull(row["arrival_timestamp"]):
                 continue
 
-            # Validate if terminus_station_id exists in the database
-            if pd.notnull(row["terminus_station_id"]) and row["terminus_station_id"] not in existing_station_ids:
-                logger.warning(f"Skipping schedule with invalid terminus_station_id {row['terminus_station_id']}.")
+            # Validate if next_station_id exists in the database
+            if pd.notnull(row["next_station_id"]) and row["next_station_id"] not in existing_station_ids:
+                logger.warning(f"Skipping schedule with invalid next_station_id {row['next_station_id']}.")
                 continue
 
             try:
                 schedule = Schedule(
                     timestamp=row["arrival_timestamp"],
                     station_id=int(row["stop_id"]),
-                    terminus_station_id=int(row["terminus_station_id"]) if pd.notnull(row["terminus_station_id"]) else None,
+                    next_station_id=int(row["next_station_id"]) if pd.notnull(row["next_station_id"]) else None,
                     transport_id=int(row["line_numeric_id"]),
                 )
                 session.add(schedule)
