@@ -23,7 +23,7 @@ def upgrade() -> None:
     """Upgrade schema."""
     op.add_column(
         'schedule',
-        sa.Column('journey_id', sa.Integer(), nullable=True),
+        sa.Column('journey_id', sa.String(), nullable=True),
         schema='transport'
     )
 

@@ -41,7 +41,7 @@ def extract_schedule_data() -> pd.DataFrame:
     """
     Processes schedule data from GTFS files and merges them into a single DataFrame.
     Returns a DataFrame with arrival_timestamp, stop_id (from parent_station),
-    next_station_id, and line_numeric_id.
+    next_station_id, line_numeric_id, and journey_id.
     """
     logger.info("Extracting GTFS data...")
 
@@ -92,10 +92,11 @@ def extract_schedule_data() -> pd.DataFrame:
         df["route_numeric"] = df["route_id"].astype(str).str.extract(route_pattern).astype(float)
         trip_pattern = r"C0*(\d+)"
         df["trip_numeric"] = df["trip_id"].astype(str).str.extract(trip_pattern).astype(float)
-        # Extract any sequence of digits from trip_id as last resort
         df["any_numeric"] = df["trip_id"].astype(str).str.extract(r"(\d+)").astype(float)
-        # Choose the best available ID (prioritize route_id over trip_id over any digits)
         df["line_numeric_id"] = df["route_numeric"].fillna(df["trip_numeric"]).fillna(df["any_numeric"]).astype("Int64")
+
+        df["journey_id"] = df["trip_id"].astype(str)
+        logger.info(f"Stored full trip_id as journey_id, sample: {df['journey_id'].sample(min(5, len(df))).tolist()}")
 
         df = df.drop(columns=["route_numeric", "trip_numeric", "any_numeric"])
 
@@ -107,7 +108,7 @@ def extract_schedule_data() -> pd.DataFrame:
         df["next_station_id"] = df.groupby("trip_id")["stop_id"].shift(-1)
 
         before_dropna = len(df)
-        df = df[["arrival_timestamp", "stop_id", "next_station_id", "line_numeric_id"]].dropna(
+        df = df[["arrival_timestamp", "stop_id", "next_station_id", "line_numeric_id", "journey_id"]].dropna(
             subset=["arrival_timestamp", "stop_id", "line_numeric_id"]
         )
         after_dropna = len(df)

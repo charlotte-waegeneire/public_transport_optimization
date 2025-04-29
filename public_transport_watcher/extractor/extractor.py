@@ -77,11 +77,11 @@ class Extractor:
 if __name__ == "__main__":
     extractor = Extractor()
     # extractor.extract_stations_data()
-    extractor.extract_navigo_validations()
+    # extractor.extract_navigo_validations()
     # extractor.extract_addresses_informations()
     # extractor.extract_categ_data()
     # extractor.extract_transport_data()
-    # extractor.extract_schedule_data()
+    extractor.extract_schedule_data()
     # traffic_data = extractor.extract_traffic_data()  # needs to be scheduled
     # air_quality_data = extractor.extract_air_quality_data()  # needs to be scheduled
     # weather_data = extractor.extract_weather_data()  # needs to be scheduled
