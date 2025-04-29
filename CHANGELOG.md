@@ -10,13 +10,12 @@ MR #9
 
 ### Added
 - Extraction of next station
-- Import next station data
 
 ### Changed
-- Timestamp format to hour only
+- Schedule timestamp format to hour only
 
 ### Fixed
-- Logger import on schedules data
+- Logger import on schedule data insertion
 
 ## [0.7.1] - 2025-04-26
 MR #8

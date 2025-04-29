@@ -30,14 +30,10 @@ def extract_transport_data() -> pd.DataFrame:
         # Original extraction method
         df_transport["numeric_id"] = df_transport["ID_Line"].str.lstrip("C").astype(int)
 
-        # Log the results of ID extraction
         logger.info(f"Unique numeric_id count: {df_transport['numeric_id'].nunique()}")
         logger.info(
             f"Sample numeric_id values: {df_transport['numeric_id'].sample(min(10, len(df_transport))).tolist()}"
         )
-
-        # Log min and max IDs
-        logger.info(f"numeric_id range: min={df_transport['numeric_id'].min()}, max={df_transport['numeric_id'].max()}")
 
         return df_transport
     except Exception as e:

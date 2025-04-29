@@ -97,11 +97,6 @@ def extract_schedule_data() -> pd.DataFrame:
         # Choose the best available ID (prioritize route_id over trip_id over any digits)
         df["line_numeric_id"] = df["route_numeric"].fillna(df["trip_numeric"]).fillna(df["any_numeric"]).astype("Int64")
 
-        logger.debug(f"IDs from route_id: {df['route_numeric'].notna().sum()}")
-        logger.debug(f"IDs from trip_id pattern: {df['trip_numeric'].notna().sum()}")
-        logger.debug(f"IDs from any numeric: {df['any_numeric'].notna().sum()}")
-        logger.debug(f"Final valid line_numeric_ids: {df['line_numeric_id'].notna().sum()}")
-
         df = df.drop(columns=["route_numeric", "trip_numeric", "any_numeric"])
 
         logger.debug(f"Sample parent_station values: {df['parent_station'].sample(min(5, len(df))).tolist()}")
