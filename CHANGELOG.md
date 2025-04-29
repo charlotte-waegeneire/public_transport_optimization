@@ -6,7 +6,7 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.1.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
 ## [0.8.0] - 2025-04-17
-MR #7
+MR #9
 
 ### Added
 - Extraction of next station
@@ -17,6 +17,15 @@ MR #7
 
 ### Fixed
 - Logger import on schedules data
+
+## [0.7.1] - 2025-04-26
+MR #8
+
+### Fixed
+- `TimedRotatingFileHandler` instead of `RotatingFileHandler` for logging configuration
+- Extraction of `latin-1` encoded files
+- Handling holidays for navigo validations extraction
+- Uppercase station names
 
 ## [0.7.0] - 2025-04-17
 MR #7
