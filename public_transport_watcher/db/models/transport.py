@@ -54,15 +54,13 @@ class Schedule(Base):
     transport_id = Column(Integer, ForeignKey(f"{transport_schema}.transport.id"), nullable=False)
 
     station = relationship(
-        "TransportStation",
-        primaryjoin="Schedule.station_id == TransportStation.id",
-        back_populates="schedules"
+        "TransportStation", primaryjoin="Schedule.station_id == TransportStation.id", back_populates="schedules"
     )
 
     next_station = relationship(
         "TransportStation",
         primaryjoin="Schedule.next_station_id == TransportStation.id",
-        back_populates="next_schedules"
+        back_populates="next_schedules",
     )
 
     transport = relationship("Transport", back_populates="schedules")
@@ -82,15 +80,11 @@ class Traffic(Base):
 
 
 TransportStation.schedules = relationship(
-    "Schedule",
-    primaryjoin="TransportStation.id == Schedule.station_id",
-    back_populates="station"
+    "Schedule", primaryjoin="TransportStation.id == Schedule.station_id", back_populates="station"
 )
 
 TransportStation.next_schedules = relationship(
-    "Schedule",
-    primaryjoin="TransportStation.id == Schedule.next_station_id",
-    back_populates="next_station"
+    "Schedule", primaryjoin="TransportStation.id == Schedule.next_station_id", back_populates="next_station"
 )
 
 TransportStation.traffic_data = relationship("Traffic", back_populates="station")
