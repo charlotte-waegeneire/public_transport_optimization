@@ -52,7 +52,7 @@ class Schedule(Base):
     station_id = Column(Integer, ForeignKey(f"{transport_schema}.station.id"), nullable=False)
     next_station_id = Column(Integer, ForeignKey(f"{transport_schema}.station.id"), nullable=True)
     transport_id = Column(Integer, ForeignKey(f"{transport_schema}.transport.id"), nullable=False)
-    journey_id = Column(String, nullable=True)
+    journey_id = Column(String, nullable=False)
 
     station = relationship(
         "TransportStation", primaryjoin="Schedule.station_id == TransportStation.id", back_populates="schedules"

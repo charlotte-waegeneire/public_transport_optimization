@@ -96,7 +96,7 @@ def extract_schedule_data() -> pd.DataFrame:
         df["line_numeric_id"] = df["route_numeric"].fillna(df["trip_numeric"]).fillna(df["any_numeric"]).astype("Int64")
 
         df["journey_id"] = df["trip_id"].astype(str)
-        logger.info(f"Stored full trip_id as journey_id, sample: {df['journey_id'].sample(min(5, len(df))).tolist()}")
+        logger.debug(f"Stored full trip_id as journey_id, sample: {df['journey_id'].sample(min(5, len(df))).tolist()}")
 
         df = df.drop(columns=["route_numeric", "trip_numeric", "any_numeric"])
 
