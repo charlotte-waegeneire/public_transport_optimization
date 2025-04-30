@@ -2,8 +2,8 @@ from datetime import datetime
 from typing import Any, Dict, List, Tuple
 
 import pandas as pd
-from sqlalchemy import select
-from sqlalchemy.dialects.postgresql import insert
+from sqlalchemy import insert, select
+from sqlalchemy.dialects.postgresql import insert as pg_insert
 from sqlalchemy.orm import sessionmaker
 
 from public_transport_watcher.db.models.transport import (
@@ -19,7 +19,7 @@ logger = get_logger()
 
 def insert_navigo_data(df: pd.DataFrame) -> None:
     """
-    Insert Navigo validations data into the database with bulk operations.
+    Insert Navigo validations data into the database with optimized bulk operations.
 
     Parameters
     ----------
@@ -31,26 +31,32 @@ def insert_navigo_data(df: pd.DataFrame) -> None:
     session = Session()
 
     try:
-        stations_map = {}
-        time_bins_map = {}
-        traffic_records = []
+        stations_data = {}
+        time_bins_data = []
+        time_bin_keys = set()
+        traffic_data = []
 
         for _, row in df.iterrows():
             try:
                 station_id = int(row["ida"])
                 station_name = row["libelle_arret"]
-                stations_map[station_id] = station_name
+                stations_data[station_id] = station_name
 
                 start_timestamp, end_timestamp = _create_timestamps(row["jour"], row["tranche_horaire"])
                 bin_key = (start_timestamp, end_timestamp)
-                if bin_key not in time_bins_map:
-                    time_bins_map[bin_key] = row["cat_day"]
+
+                if bin_key not in time_bin_keys:
+                    time_bin_keys.add(bin_key)
+                    time_bins_data.append(
+                        {"start_timestamp": start_timestamp, "end_timestamp": end_timestamp, "cat_day": row["cat_day"]}
+                    )
 
                 validations_value = int(float(row["validations_horaires"]))
-                traffic_records.append(
+                traffic_data.append(
                     {
                         "station_id": station_id,
-                        "bin_key": bin_key,
+                        "start_timestamp": start_timestamp,
+                        "end_timestamp": end_timestamp,
                         "validations": validations_value,
                     }
                 )
@@ -60,20 +66,27 @@ def insert_navigo_data(df: pd.DataFrame) -> None:
                 logger.debug(f"Row data: {row}")
                 continue
 
-        stations_added = _bulk_process_stations(session, stations_map)
+        stations_added = _bulk_upsert_stations(session, stations_data)
+        logger.debug(f"Stations inserted/updated: {stations_added}")
 
-        time_bins_dict = _bulk_process_time_bins(session, time_bins_map)
+        time_bins_map = _bulk_upsert_time_bins(session, time_bins_data)
+        logger.debug(f"Time bins processed: {len(time_bins_map)}")
 
-        for record in traffic_records:
-            bin_key = record.pop("bin_key")
-            record["time_bin_id"] = time_bins_dict[bin_key]
+        traffic_records = []
+        for record in traffic_data:
+            bin_key = (record.pop("start_timestamp"), record.pop("end_timestamp"))
+            if bin_key in time_bins_map:
+                record["time_bin_id"] = time_bins_map[bin_key]
+                traffic_records.append(record)
+            else:
+                logger.warning(f"No time bin found for {bin_key}")
 
-        traffic_added = _bulk_process_traffic(session, traffic_records, bulk_size=1000)
+        traffic_added = _bulk_upsert_traffic(session, traffic_records)
+        logger.debug(f"Traffic records inserted/updated: {traffic_added}")
 
         session.commit()
-
         logger.info(
-            f"Bulk insertion completed: {stations_added} stations, {len(time_bins_dict)} time bins, {traffic_added} traffic records"
+            f"Bulk insertion completed: {stations_added} stations, {len(time_bins_map)} time bins, {traffic_added} traffic records"
         )
 
     except Exception as e:
@@ -86,118 +99,85 @@ def insert_navigo_data(df: pd.DataFrame) -> None:
     logger.info("Successfully inserted Navigo validations data.")
 
 
-def _bulk_process_stations(session, stations_map: Dict[int, str]) -> int:
-    """Process stations in bulk and return number of new stations added."""
+def _bulk_upsert_stations(session, stations_map: Dict[int, str]) -> int:
+    """Upsert stations in bulk and return number of stations processed."""
     if not stations_map:
         return 0
 
-    existing_stations = (
-        session.execute(select(TransportStation).where(TransportStation.id.in_(list(stations_map.keys()))))
+    stations_to_add = [{"id": station_id, "name": station_name} for station_id, station_name in stations_map.items()]
+
+    if not stations_to_add:
+        return 0
+
+    stmt = pg_insert(TransportStation).values(stations_to_add)
+    stmt = stmt.on_conflict_do_update(index_elements=["id"], set_={"name": stmt.excluded.name})
+
+    result = session.execute(stmt)
+    return result.rowcount
+
+
+def _bulk_upsert_time_bins(session, time_bins_data: List[Dict[str, Any]]) -> Dict[Tuple[datetime, datetime], int]:
+    """Upsert time bins in bulk and return mapping of bin_key to time_bin_id."""
+    result_dict = {}
+
+    if not time_bins_data:
+        return result_dict
+
+    all_start_timestamps = [tb["start_timestamp"] for tb in time_bins_data]
+    all_end_timestamps = [tb["end_timestamp"] for tb in time_bins_data]
+
+    existing_time_bins = (
+        session.execute(
+            select(TransportTimeBin).where(
+                (TransportTimeBin.start_timestamp.in_(all_start_timestamps))
+                & (TransportTimeBin.end_timestamp.in_(all_end_timestamps))
+            )
+        )
         .scalars()
         .all()
     )
 
-    existing_ids = {station.id for station in existing_stations}
+    for time_bin in existing_time_bins:
+        result_dict[(time_bin.start_timestamp, time_bin.end_timestamp)] = time_bin.id
 
-    stations_to_add = []
-    for station_id, station_name in stations_map.items():
-        if station_id not in existing_ids:
-            stations_to_add.append({"id": station_id, "name": station_name})
+    bins_to_insert = []
+    for tb in time_bins_data:
+        key = (tb["start_timestamp"], tb["end_timestamp"])
+        if key not in result_dict:
+            bins_to_insert.append(tb)
 
-    if stations_to_add:
-        session.execute(insert(TransportStation).values(stations_to_add))
+    if bins_to_insert:
+        stmt = insert(TransportTimeBin).values(bins_to_insert)
+        session.execute(stmt)
         session.flush()
 
-    return len(stations_to_add)
+        for bin_data in bins_to_insert:
+            key = (bin_data["start_timestamp"], bin_data["end_timestamp"])
+            if key not in result_dict:
+                time_bin = session.execute(
+                    select(TransportTimeBin).where(
+                        (TransportTimeBin.start_timestamp == key[0]) & (TransportTimeBin.end_timestamp == key[1])
+                    )
+                ).scalar_one_or_none()
 
-
-def _bulk_process_time_bins(
-    session, time_bins_map: Dict[Tuple[datetime, datetime], str]
-) -> Dict[Tuple[datetime, datetime], int]:
-    """Process time bins in bulk and return mapping of bin_key to time_bin_id."""
-    result_dict = {}
-
-    if not time_bins_map:
-        return result_dict
-
-    bin_keys = list(time_bins_map.keys())
-    existing_time_bins = []
-
-    batch_size = 500
-    for i in range(0, len(bin_keys), batch_size):
-        batch_keys = bin_keys[i : i + batch_size]
-
-        for key in batch_keys:
-            time_bin = session.execute(
-                select(TransportTimeBin).where(
-                    (TransportTimeBin.start_timestamp == key[0]) & (TransportTimeBin.end_timestamp == key[1])
-                )
-            ).scalar_one_or_none()
-
-            if time_bin:
-                existing_time_bins.append(time_bin)
-                result_dict[key] = time_bin.id
-
-    time_bins_to_add = []
-    for (start_timestamp, end_timestamp), cat_day in time_bins_map.items():
-        if (start_timestamp, end_timestamp) not in result_dict:
-            time_bins_to_add.append(
-                {
-                    "start_timestamp": start_timestamp,
-                    "end_timestamp": end_timestamp,
-                    "cat_day": cat_day,
-                }
-            )
-
-    if time_bins_to_add:
-        for time_bin_data in time_bins_to_add:
-            time_bin = TransportTimeBin(**time_bin_data)
-            session.add(time_bin)
-            session.flush()
-            result_dict[(time_bin.start_timestamp, time_bin.end_timestamp)] = time_bin.id
+                if time_bin:
+                    result_dict[key] = time_bin.id
 
     return result_dict
 
 
-def _bulk_process_traffic(session, traffic_records: List[Dict[str, Any]], bulk_size: int = 1000) -> int:
-    """Process traffic data in bulk with specified batch size and return count of records processed."""
+def _bulk_upsert_traffic(session, traffic_records: List[Dict[str, Any]]) -> int:
+    """Upsert traffic data in bulk and return count of records processed."""
     if not traffic_records:
         return 0
 
-    total_processed = 0
+    stmt = pg_insert(Traffic).values(traffic_records)
+    stmt = stmt.on_conflict_do_update(
+        index_elements=["station_id", "time_bin_id"], set_={"validations": stmt.excluded.validations}
+    )
 
-    for i in range(0, len(traffic_records), bulk_size):
-        batch = traffic_records[i : i + bulk_size]
-
-        records_to_update = []
-        records_to_insert = []
-
-        for record in batch:
-            traffic = session.execute(
-                select(Traffic).where(
-                    (Traffic.station_id == record["station_id"]) & (Traffic.time_bin_id == record["time_bin_id"])
-                )
-            ).scalar_one_or_none()
-
-            if traffic:
-                traffic.validations = record["validations"]
-                records_to_update.append(traffic)
-            else:
-                records_to_insert.append(
-                    Traffic(
-                        station_id=record["station_id"],
-                        time_bin_id=record["time_bin_id"],
-                        validations=record["validations"],
-                    )
-                )
-
-        if records_to_insert:
-            session.add_all(records_to_insert)
-
-        session.flush()
-        total_processed += len(batch)
-
-    return total_processed
+    result = session.execute(stmt)
+    return result.rowcount
 
 
 def _create_timestamps(date_val: str, time_range_str: str) -> Tuple[datetime, datetime]:

@@ -5,7 +5,7 @@ EXTRACTION_CONFIG = {
             2023: ["s1", "s2"],
             2024: ["s1", {"s2": ["3", "4"]}],
         },
-        "batch_size": 50000,
+        "batch_size": 100000,
     },
     "stations": {
         "batch_size": 100,

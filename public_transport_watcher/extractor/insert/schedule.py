@@ -65,6 +65,7 @@ def insert_schedule_data(df: pd.DataFrame, config: dict) -> None:
                         station_id=int(row["stop_id"]),
                         next_station_id=int(row["next_station_id"]) if pd.notnull(row["next_station_id"]) else None,
                         transport_id=int(row["line_numeric_id"]),
+                        journey_id=str(row["journey_id"]) if pd.notnull(row["journey_id"]) else None,
                     )
                     session.add(schedule)
                     inserted += 1
