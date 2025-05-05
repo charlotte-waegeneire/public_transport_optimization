@@ -12,6 +12,7 @@ MR #12
 - Graph builder, saver, and loader for the public transport network
 - Visualizer for the network
 - `networkx` in the dependencies
+- `NETWORK_PATH` in the `.env.example` file
 
 ## [0.10.0] - 2025-04-30
 MR #11
