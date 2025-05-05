@@ -52,4 +52,4 @@ if __name__ == "__main__":
     graph_builder = GraphBuilder()
     graph_builder.save_graph()
     graph = graph_builder.load_graph()
-    route = graph_builder.find_optimal_route(1, 2)
+    optimal_path, total_time, route_info = graph_builder.find_optimal_route(1, 2)
