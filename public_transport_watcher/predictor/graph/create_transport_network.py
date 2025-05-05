@@ -20,10 +20,8 @@ def create_transport_network(stations_df, schedules_df):
     networkx.DiGraph
         Directed graph representing the transport network with travel times as weights
     """
-    # Create an empty directed graph
     G = nx.DiGraph()
 
-    # Add stations as nodes with their attributes
     for _, station in stations_df.iterrows():
         G.add_node(
             station["id"],
@@ -33,11 +31,9 @@ def create_transport_network(stations_df, schedules_df):
             pos=(station["longitude"], station["latitude"]),  # For visualization
         )
 
-    # Process schedules to create edges
     valid_schedules = schedules_df.copy()
     valid_schedules = valid_schedules[pd.notna(valid_schedules["next_station_id"])]
 
-    # Add connections as edges
     for _, schedule in valid_schedules.iterrows():
         from_station = schedule["station_id"]
         to_station = schedule["next_station_id"]
@@ -52,7 +48,6 @@ def create_transport_network(stations_df, schedules_df):
             )
 
         if to_station not in G:
-            # Create a dummy node if the station isn't in our stations_df
             G.add_node(
                 to_station,
                 name=f"Station {to_station}",
@@ -62,7 +57,6 @@ def create_transport_network(stations_df, schedules_df):
         # Use travel_time as the weight if available, otherwise use a default value (5 minutes as fallback)
         weight = schedule["travel_time"] if pd.notna(schedule["travel_time"]) else 5.0
 
-        # Add the edge with all relevant information
         G.add_edge(
             from_station,
             to_station,

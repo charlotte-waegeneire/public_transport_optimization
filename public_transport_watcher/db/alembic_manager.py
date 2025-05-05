@@ -3,6 +3,10 @@ from pathlib import Path
 import subprocess
 import sys
 
+from public_transport_watcher.logging_config import get_logger
+
+logger = get_logger()
+
 
 def run_alembic_command(command, *args):
     project_root = Path(__file__).parent.parent.parent
@@ -15,9 +19,9 @@ def run_alembic_command(command, *args):
     result = subprocess.run(alembic_cmd, capture_output=True, text=True)
 
     if result.stdout:
-        print(result.stdout)
+        logger.info(result.stdout)
     if result.stderr:
-        print("ERREUR:", result.stderr, file=sys.stderr)
+        logger.error(f"ERREUR: {result.stderr}")
 
     return result.returncode
 
@@ -45,8 +49,8 @@ def show_history():
 if __name__ == "__main__":
     # Utilisation example
     if len(sys.argv) < 2:
-        print("Usage: python -m public_transport_watcher.db.alembic_manager [command] [args]")
-        print("Commands: generate, upgrade, downgrade, current, history")
+        logger.info("Usage: python -m public_transport_watcher.db.alembic_manager [command] [args]")
+        logger.info("Commands: generate, upgrade, downgrade, current, history")
         sys.exit(1)
 
     command = sys.argv[1]
@@ -54,7 +58,7 @@ if __name__ == "__main__":
 
     if command == "generate":
         if not args:
-            print("Error: Message required for generate command")
+            logger.error("Error: Message required for generate command")
             sys.exit(1)
         generate_migration(args[0])
     elif command == "upgrade":
@@ -68,5 +72,5 @@ if __name__ == "__main__":
     elif command == "history":
         show_history()
     else:
-        print(f"Unknown command: {command}")
+        logger.error(f"Unknown command: {command}")
         sys.exit(1)

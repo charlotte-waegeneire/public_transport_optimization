@@ -15,13 +15,10 @@ def visualize_network(G, node_size=50, with_labels=False):
     with_labels : bool
         Whether to show station labels
     """
-    # Get positions from node attributes
     pos = nx.get_node_attributes(G, "pos")
 
-    # Create figure
     plt.figure(figsize=(12, 10))
 
-    # Draw the network
     nx.draw_networkx(
         G,
         pos=pos,

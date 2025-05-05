@@ -17,18 +17,14 @@ def calculate_travel_time(schedules_df):
     pandas DataFrame
         Original dataframe with added 'travel_time' column (in minutes)
     """
-    # Create a copy to avoid modifying the original
     time_travel_df = schedules_df.copy()
-
-    # Drop rows with missing timestamp
     time_travel_df = time_travel_df.dropna(subset=["timestamp"])
 
-    # Ensure timestamp is in datetime format
     time_travel_df["timestamp"] = pd.to_datetime(time_travel_df["timestamp"], format="%H:%M:%S", errors="coerce")
 
     no_next_station_mask = time_travel_df["next_station_id"].isna()
     time_travel_df.loc[no_next_station_mask, "next_station_id"] = -1
-    # station_id and next_station_id are int
+
     time_travel_df["station_id"] = time_travel_df["station_id"].astype(int)
     time_travel_df["next_station_id"] = time_travel_df["next_station_id"].astype(int)
 
@@ -39,13 +35,10 @@ def calculate_travel_time(schedules_df):
     time_travel_df["arrival_time"] = time_travel_df.groupby("journey_id")["timestamp"].shift(-1)
     time_travel_df.loc[no_next_station_mask, "arrival_time"] = np.nan
 
-    # Calculate travel time and ensure it's positive
     time_travel_df["travel_time"] = (
         (time_travel_df["arrival_time"] - time_travel_df["timestamp"]).dt.total_seconds() / 60
     ) + 1
 
-    # Handle negative travel times:
-    # 1. For day transitions (e.g., schedule ends at 23:59 and starts next day at 00:01)
     day_transition_mask = time_travel_df["travel_time"] < 0
     time_travel_df.loc[day_transition_mask, "travel_time"] = (
         (
@@ -54,8 +47,8 @@ def calculate_travel_time(schedules_df):
         ).dt.total_seconds()
         / 60
     ) % (24 * 60) + 1  # Add 24 hours (in minutes) for day transitions
+    # needs to add 1 minute for the door opening/closing during tranfers
 
-    # Ensure all remaining travel times are positive (minimum travel time as 1 minute)
     time_travel_df["travel_time"] = time_travel_df["travel_time"].apply(
         lambda x: max(1.0, x) if pd.notnull(x) else np.nan
     )
@@ -67,7 +60,6 @@ def calculate_travel_time(schedules_df):
 
     time_travel_df.loc[time_travel_df["next_station_id"] == -1, "next_station_id"] = np.nan
 
-    # Calculate the mean travel time for each transport-station pair
     time_travel_df["travel_time"] = time_travel_df.groupby(["transport_id", "station_id", "next_station_id"])[
         "travel_time"
     ].transform("mean")

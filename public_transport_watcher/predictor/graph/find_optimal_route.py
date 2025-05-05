@@ -1,5 +1,9 @@
 import networkx as nx
 
+from public_transport_watcher.logging_config import get_logger
+
+logger = get_logger()
+
 
 def find_optimal_route(G, start_station_id, end_station_id, transfer_penalty=5.0):
     """
@@ -25,13 +29,12 @@ def find_optimal_route(G, start_station_id, end_station_id, transfer_penalty=5.0
     dict
         Additional information about the route (stations names, transfers, etc.)
     """
-    # Verify that the start and end stations exist in the graph
     if start_station_id not in G:
-        print(f"Start station {start_station_id} not found in network")
+        logger.error(f"Start station {start_station_id} not found in network")
         return None, float("inf"), {"error": f"Start station {start_station_id} not found in network"}
 
     if end_station_id not in G:
-        print(f"End station {end_station_id} not found in network")
+        logger.error(f"End station {end_station_id} not found in network")
         return None, float("inf"), {"error": f"End station {end_station_id} not found in network"}
 
     # Create an extended graph to explicitly handle transfers
@@ -43,18 +46,15 @@ def find_optimal_route(G, start_station_id, end_station_id, transfer_penalty=5.0
     transport_at_station = {}
     for u, v, data in G.edges(data=True):
         transport_id = data.get("transport_id")
-        # Track which transports serve each station
         if u not in transport_at_station:
             transport_at_station[u] = set()
         transport_at_station[u].add(transport_id)
 
     # Step 2: Create nodes in extended graph
     for node_id in G.nodes():
-        # Get station attributes
         node_attrs = G.nodes[node_id]
 
         if node_id in transport_at_station:
-            # Create a node for each transport line at this station
             for transport_id in transport_at_station[node_id]:
                 extended_node_id = (node_id, transport_id)
                 extended_G.add_node(extended_node_id, **node_attrs, original_id=node_id)
@@ -76,7 +76,6 @@ def find_optimal_route(G, start_station_id, end_station_id, transfer_penalty=5.0
                             transport_id="Transfer",
                         )
         else:
-            # For stations with no outgoing transports, just add them as is
             extended_G.add_node(node_id, **node_attrs, original_id=node_id)
 
     # Step 3: Add travel edges from the original graph
@@ -96,7 +95,6 @@ def find_optimal_route(G, start_station_id, end_station_id, transfer_penalty=5.0
     # If start station has multiple transports, we need to be able to start with any of them
     start_node_extended = None
     if start_station_id in transport_at_station:
-        # Create a virtual start node
         start_node_extended = f"start_{start_station_id}"
         extended_G.add_node(
             start_node_extended, name=f"Start at {G.nodes[start_station_id].get('name', start_station_id)}"
@@ -118,7 +116,6 @@ def find_optimal_route(G, start_station_id, end_station_id, transfer_penalty=5.0
     # If end station has multiple transports, we need to be able to end with any of them
     end_node_extended = None
     if end_station_id in transport_at_station:
-        # Create a virtual end node
         end_node_extended = f"end_{end_station_id}"
         extended_G.add_node(end_node_extended, name=f"End at {G.nodes[end_station_id].get('name', end_station_id)}")
 
@@ -154,7 +151,6 @@ def find_optimal_route(G, start_station_id, end_station_id, transfer_penalty=5.0
                 # It's already an original node
                 path.append(node)
 
-        # Remove consecutive duplicates in the path
         path = [path[i] for i in range(len(path)) if i == 0 or path[i] != path[i - 1]]
 
         # Step 7: Prepare detailed route information
@@ -176,25 +172,20 @@ def find_optimal_route(G, start_station_id, end_station_id, transfer_penalty=5.0
             from_node = path_extended[i]
             to_node = path_extended[i + 1]
 
-            # Skip virtual start/end nodes in segment analysis
             if isinstance(from_node, str) and (from_node.startswith("start_") or from_node.startswith("end_")):
                 continue
             if isinstance(to_node, str) and (to_node.startswith("start_") or to_node.startswith("end_")):
                 continue
 
-            # Get edge data
             edge_data = extended_G[from_node][to_node]
 
-            # Extract original station IDs
             from_station = from_node[0] if isinstance(from_node, tuple) else from_node
             to_station = to_node[0] if isinstance(to_node, tuple) else to_node
 
-            # Only add segment if stations are different (to avoid transfers at same station)
             if from_station != to_station:
                 transport_id = edge_data.get("transport_id")
                 travel_time = edge_data.get("weight", 5.0)
 
-                # Check if this is a transfer (we're on different transport than before)
                 is_transfer = (
                     current_transport is not None and transport_id != current_transport and transport_id != "End"
                 )
@@ -202,7 +193,6 @@ def find_optimal_route(G, start_station_id, end_station_id, transfer_penalty=5.0
                 if is_transfer:
                     num_transfers += 1
 
-                # Only update current transport if it's not a special marker
                 if transport_id not in ["Start", "End", "Transfer"]:
                     current_transport = transport_id
 
@@ -218,14 +208,13 @@ def find_optimal_route(G, start_station_id, end_station_id, transfer_penalty=5.0
 
                 route_info["segments"].append(segment)
 
-        # Set the number of transfers
         route_info["num_transfers"] = num_transfers
 
         return path, path_length, route_info
 
     except nx.NetworkXNoPath:
-        print(f"No path found between {start_station_id} and {end_station_id}")
+        logger.error(f"No path found between {start_station_id} and {end_station_id}")
         return None, float("inf"), {"error": "No path found"}
     except Exception as e:
-        print(f"Error finding route: {str(e)}")
+        logger.error(f"Error finding route: {str(e)}")
         return None, float("inf"), {"error": f"Error finding route: {str(e)}"}
