@@ -86,12 +86,12 @@ def run_arima_analysis(station_id=None):
 class ArimaPredictor:
     def predict_for_station(self, station_id):
         """
-        Prédit le trafic pour une station spécifique.
+        Predicts traffic for a specific station.
 
         Args:
-            station_id (int): ID de la station
+            station_id (int): ID of the station
 
         Returns:
-            dict: Résultats de la prédiction
+            dict: Prediction results
         """
         return run_arima_analysis(station_id=station_id)
