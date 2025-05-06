@@ -46,8 +46,7 @@ def calculate_travel_time(schedules_df):
             - time_travel_df.loc[day_transition_mask, "timestamp"]
         ).dt.total_seconds()
         / 60
-    ) % (24 * 60) + 1  # Add 24 hours (in minutes) for day transitions
-    # needs to add 1 minute for the door opening/closing during tranfers
+    ) % (24 * 60)  # Add 24 hours (in minutes) for day transitions
 
     time_travel_df["travel_time"] = time_travel_df["travel_time"].apply(
         lambda x: max(1.0, x) if pd.notnull(x) else np.nan
