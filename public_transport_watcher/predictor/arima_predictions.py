@@ -67,23 +67,23 @@ def run_arima_analysis(station_id=None):
         logger.info(f"▶ Confidence interval: [{next_hour_conf_int[0]} - {next_hour_conf_int[1]}]")
 
         return {
-            'model': model_fit,
-            'prediction': next_hour_prediction,
-            'conf_int': next_hour_conf_int,
-            'start_time': current_time,
-            'end_time': next_hour_end,
-            'station_id': station_id
+            "model": model_fit,
+            "prediction": next_hour_prediction,
+            "conf_int": next_hour_conf_int,
+            "start_time": current_time,
+            "end_time": next_hour_end,
+            "station_id": station_id,
         }
 
     except Exception as e:
         logger.error(f"Error in analysis: {e}")
         import traceback
+
         traceback.print_exc()
         return None
 
 
 class ArimaPredictor:
-
     def predict_for_station(self, station_id):
         """
         Prédit le trafic pour une station spécifique.

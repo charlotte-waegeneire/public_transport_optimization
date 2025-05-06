@@ -15,12 +15,9 @@ def build_arima_model(timeseries):
     Returns:
         SARIMAXResultsWrapper: Fitted ARIMA model
     """
-    model = SARIMAX(
-        timeseries,
-        order=(1, 1, 1)
-    )
+    model = SARIMAX(timeseries, order=(1, 1, 1))
 
-    return model.fit(disp=False, method='powell', maxiter=200)
+    return model.fit(disp=False, method="powell", maxiter=200)
 
 
 def predict_traffic(model_fit, timeseries, steps=1):
