@@ -1,5 +1,5 @@
-from sqlalchemy import Column, Time, Enum, ForeignKey, Integer, MetaData, String
-from sqlalchemy.orm import relationship, remote, foreign
+from sqlalchemy import Column, Enum, ForeignKey, Integer, MetaData, String, Time
+from sqlalchemy.orm import relationship
 
 from public_transport_watcher.db.models.base import Base, StationBase, TimeBinBase
 from public_transport_watcher.db.models.enums import DayCategoryEnum

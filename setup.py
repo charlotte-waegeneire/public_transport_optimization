@@ -14,5 +14,6 @@ setup(
         "python-dotenv>=1.0, <2.0",
         "requests >=2.31, <3.0",
         "sqlalchemy >=2.0, <3.0",
+        "networkx >=3.4.2, <4.0",
     ],
 )
