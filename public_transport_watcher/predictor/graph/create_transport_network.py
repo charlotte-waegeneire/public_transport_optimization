@@ -37,7 +37,7 @@ def _add_connections_to_graph(G, schedules_df):
             _add_dummy_node(G, to_station)
 
         # Use travel_time as the weight if available, otherwise use a default value
-        weight = schedule["travel_time"] if pd.notna(schedule["travel_time"]) else 5.0
+        weight = schedule["travel_time"] if pd.notna(schedule["travel_time"]) else 3.0
 
         _add_edge_with_attributes(G, from_station, to_station, schedule, weight)
 
