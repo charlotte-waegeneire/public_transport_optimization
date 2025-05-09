@@ -5,6 +5,25 @@ All notable changes to this project will be documented in this file.
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.1.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## [0.13.0] - 2025-13-05
+MR #15
+
+### Added
+- Streamlit core interface
+
+### Changed
+- `get_sql_query` from `extractor` to utils folder for global use
+
+## [0.12.0] - 2025-05-09
+MR #13
+
+### Added
+- Calculation of the walking trip to reach the nearest station using the graph
+
+### Changed
+- `graph_builder.find_optimal_route` to use this new function to calculate the whole journey
+- Transfers duration from 5 minutes to 3
+
 ## [0.11.0] - 2025-05-05
 MR #12
 
