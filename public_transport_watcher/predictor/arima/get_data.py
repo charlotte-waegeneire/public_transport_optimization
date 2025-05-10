@@ -1,6 +1,5 @@
 from public_transport_watcher.logging_config import get_logger
 import pandas as pd
-import numpy as np
 from sqlalchemy.orm import sessionmaker
 
 from public_transport_watcher.utils import get_engine
@@ -65,34 +64,4 @@ def get_data_from_db(station_id=None):
         df["datetime"] = pd.to_datetime(df["start_timestamp"])
         df.set_index("datetime", inplace=True)
 
-    logger.debug(df.head())
     return df
-
-
-def prepare_data(df, station_id=None):
-    """
-    Prepares the data for analysis by performing resampling,
-    anomaly detection, and interpolation.
-
-    Args:
-        df (DataFrame): Raw traffic data
-        station_id (int, optional): ID of the station to filter
-
-    Returns:
-        Series: Cleaned and prepared time series for analysis
-    """
-    if station_id is not None and "station_id" in df.columns:
-        df = df[df["station_id"] == station_id]
-
-    timeseries = df.resample("H")["validations"].sum()
-
-    rolling_stats = timeseries.rolling(window=24, min_periods=1)
-    upper_limit = rolling_stats.mean() + 3 * rolling_stats.std().fillna(timeseries.std())
-    lower_limit = rolling_stats.mean() - 3 * rolling_stats.std().fillna(timeseries.std())
-
-    timeseries_clean = timeseries.copy()
-    timeseries_clean[(timeseries > upper_limit) | (timeseries < lower_limit)] = np.nan
-    timeseries_clean = timeseries_clean.interpolate(method="time").fillna(method="bfill").fillna(method="ffill")
-
-    logger.debug(timeseries_clean.head())
-    return timeseries_clean
