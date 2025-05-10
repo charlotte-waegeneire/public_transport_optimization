@@ -5,6 +5,23 @@ All notable changes to this project will be documented in this file.
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.1.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## [0.14.0] - 2025-05-11
+MR #15
+
+### Added
+- Adaptative predictions using ARIMA model, with custom parameter for each station by finding the optimimal ones
+- Combined time-weighted historical data, recent observations, and ARIMA models
+
+## [0.13.0] - 2025-05-09
+MR #14
+
+### Added
+- Calculation of the walking trip to reach the nearest station using the graph
+
+### Modified
+- `graph_builder.find_optimal_route` to use this new function to calculate the whole journey
+- Transfers duration from 5 minutes to 3
+
 ## [0.12.0] - 2025-05-06
 MR #13
 
@@ -128,3 +145,16 @@ MR #1
 
 ### Added
 - Init repo
+
+## [0.14.0] - 2025-05-15
+
+### Added
+- Adaptive ARIMA predictor implementation with station-specific optimization
+- Time-weighted historical data analysis to prioritize recent observations
+- Dynamic weighting between different prediction methods
+- More precise day type filtering for historical data
+
+### Changed
+- Default ARIMA predictor now uses the adaptive model
+- The prediction system now supports both standard and adaptive ARIMA models
+- Improved visualization of predictions vs historical data
