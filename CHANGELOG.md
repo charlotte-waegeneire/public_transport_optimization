@@ -145,16 +145,3 @@ MR #1
 
 ### Added
 - Init repo
-
-## [0.14.0] - 2025-05-15
-
-### Added
-- Adaptive ARIMA predictor implementation with station-specific optimization
-- Time-weighted historical data analysis to prioritize recent observations
-- Dynamic weighting between different prediction methods
-- More precise day type filtering for historical data
-
-### Changed
-- Default ARIMA predictor now uses the adaptive model
-- The prediction system now supports both standard and adaptive ARIMA models
-- Improved visualization of predictions vs historical data
