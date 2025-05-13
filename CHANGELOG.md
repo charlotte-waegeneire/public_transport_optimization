@@ -9,7 +9,9 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 MR #15
 
 ### Added
-- Streamlit core interface
+- Streamlit core interface with user authentication
+- Simple and quick schema for the user CRUD
+- Streamlit to `setup.py` requirements
 
 ### Changed
 - `get_sql_query` from `extractor` to utils folder for global use
