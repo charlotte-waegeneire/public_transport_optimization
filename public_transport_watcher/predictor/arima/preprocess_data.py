@@ -1,6 +1,6 @@
-from public_transport_watcher.logging_config import logger
-
 import pandas as pd
+
+from public_transport_watcher.logging_config import logger
 
 
 def preprocess_data(df, station_id):

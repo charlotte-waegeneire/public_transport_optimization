@@ -5,6 +5,12 @@ All notable changes to this project will be documented in this file.
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.1.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## [0.14.0] - 2025-05-11
+MR #15
+
+### Added
+- Adaptative predictions using ARIMA model, with custom parameter for each station by finding the optimimal ones
+- Combined time-weighted historical data, recent observations, and ARIMA models
 
 ## [0.13.0] - 2025-05-09
 MR #14

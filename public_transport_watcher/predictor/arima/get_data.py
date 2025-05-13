@@ -1,7 +1,7 @@
-from public_transport_watcher.logging_config import get_logger
 import pandas as pd
 from sqlalchemy.orm import sessionmaker
 
+from public_transport_watcher.logging_config import get_logger
 from public_transport_watcher.utils import get_engine
 
 logger = get_logger()
@@ -18,20 +18,17 @@ def get_data_from_db(station_id=None):
     Returns:
         DataFrame: Traffic data with timestamps
     """
+    if station_id is None:
+        logger.error("Station ID is required.")
+        return None
+
+    if not isinstance(station_id, int):
+        logger.error("Station ID must be an integer.")
+        return None
+
     engine = get_engine()
     Session = sessionmaker(bind=engine)
     session = Session()
-
-    if station_id is None:
-        stations_query = """
-        SELECT DISTINCT s.id, s.name
-        FROM transport.station s
-        JOIN transport.traffic t ON s.id = t.station_id
-        LIMIT 10
-        """
-        stations_df = pd.read_sql(stations_query, engine)
-        if not stations_df.empty:
-            logger.info(f"Available stations: {stations_df.to_dict('records')}")
 
     query = """
     SELECT 
@@ -48,14 +45,15 @@ def get_data_from_db(station_id=None):
         transport.station s ON t.station_id = s.id
     JOIN 
         transport.time_bin tb ON t.time_bin_id = tb.id
+    WHERE
+        t.station_id = %(station_id)s
+    ORDER BY t.time_bin_id
     """
 
-    if station_id:
-        query += f" WHERE t.station_id = {station_id}"
+    params = {"station_id": station_id}
 
-    query += " ORDER BY t.time_bin_id"
-
-    df = pd.read_sql(query, engine)
+    # Use SQLAlchemy prepared parameters to avoid SQL injection
+    df = pd.read_sql(query, engine, params=params)
     session.close()
 
     logger.info(f"Data retrieved: {len(df)} rows")

@@ -1,78 +1,83 @@
+import json
 import os
 
-from public_transport_watcher.logging_config import logger
-from public_transport_watcher.predictor.arima import get_data_from_db, predict_validations
-from public_transport_watcher.predictor.arima.visualize_predictions import visualize_predictions
+from public_transport_watcher.logging_config import get_logger
+from public_transport_watcher.predictor.arima import (
+    find_optimal_params,
+    get_data_from_db,
+    predict_navigo_validations,
+)
+from public_transport_watcher.predictor.configuration import ARIMA_CONFIG
+
+logger = get_logger()
 
 
 class ArimaPredictor:
-    def __init__(self, graphs_dir="graphs"):
-        self.graphs_dir = graphs_dir
-        os.makedirs(graphs_dir, exist_ok=True)
-        logger.info(f"ArimaPredictor initialized. Graphs stored in: {graphs_dir}")
+    def __init__(self):
+        self.params_file = ARIMA_CONFIG["params_station_file"]
+        self.p_range = ARIMA_CONFIG["p_range"]
+        self.d_range = ARIMA_CONFIG["d_range"]
+        self.q_range = ARIMA_CONFIG["q_range"]
+        self._load_all_station_params()
 
-    def predict_for_station(self, station_id):
-        return self._predict_station_validations(station_id)
+    def _load_all_station_params(self):
+        self.station_params = {}
+        if os.path.exists(self.params_file):
+            try:
+                with open(self.params_file, "r") as f:
+                    params_dict = json.load(f)
 
-    def _predict_station_validations(self, station_id):
+                for station_id, params in params_dict.items():
+                    self.station_params[int(station_id)] = tuple(params)
+
+                logger.info(f"Loaded ARIMA parameters for {len(self.station_params)} stations from consolidated file")
+            except Exception as e:
+                logger.error(f"Error loading consolidated ARIMA parameters: {e}")
+        else:
+            logger.error("No consolidated ARIMA parameters file found")
+
+    def predict_for_station(self, station_id, optimize_params=False):
         try:
             logger.info(f"Starting prediction for station {station_id}")
-            df = get_data_from_db(station_id)
+            data_raw = get_data_from_db(station_id)
 
-            if df.empty:
+            if data_raw.empty:
                 logger.error(f"No data available for station {station_id}")
                 return None, 0
 
-            from public_transport_watcher.predictor.arima.preprocess_data import preprocess_data
+            # Check if station_id exists as a string key
+            if str(station_id) in self.station_params:
+                self.station_params[station_id] = self.station_params[str(station_id)]
 
-            data_df = preprocess_data(df, station_id)
-
-            predictions, total = predict_validations(df, station_id)
-
-            if predictions is not None:
-                from datetime import datetime
-
-                current_time = datetime.now()
-
-                hourly_avg = self._calculate_hourly_profile(data_df, current_time)
-
-                graph_path = visualize_predictions(
-                    station_id=station_id,
-                    hourly_avg=hourly_avg,
-                    forecast_df=predictions,
-                    current_time=current_time,
-                    data_df=data_df,
-                    save_dir=self.graphs_dir,
+            if optimize_params or station_id not in self.station_params:
+                arima_params = find_optimal_params(
+                    station_id,
+                    data_raw,
+                    self.p_range,
+                    self.d_range,
+                    self.q_range,
+                    self.station_params,
+                    self.params_file,
                 )
-                logger.info(f"Prediction graph saved: {graph_path}")
+            else:
+                arima_params = self.station_params[station_id]
+
+            logger.info(f"Using ARIMA{arima_params} model for station {station_id}")
+
+            predictions, total = predict_navigo_validations(data_raw, station_id, arima_params)
 
             logger.info(f"Prediction completed successfully for station {station_id}")
             return predictions, total
 
         except Exception as e:
-            logger.error(f"Error during prediction for station {station_id}: {str(e)}")
+            logger.error(f"Error during prediction for station {station_id}: {e}")
+            import traceback
+
+            logger.error(traceback.format_exc())
             return None, 0
-
-    def _calculate_hourly_profile(self, data_df, current_time):
-        import calendar
-        import pandas as pd
-
-        current_month = current_time.month
-        current_day_of_week = current_time.weekday()
-
-        similar_hours = data_df[(data_df["month"] == current_month) & (data_df["day_of_week"] == current_day_of_week)]
-
-        if not similar_hours.empty:
-            hourly_avg = similar_hours.groupby("hour")["validations"].mean()
-        else:
-            hourly_avg = pd.Series(dtype=float)
-
-        return hourly_avg
 
 
 if __name__ == "__main__":
-    from public_transport_watcher.logging_config import get_logger
-
     logger = get_logger()
 
     arima_predictor = ArimaPredictor()

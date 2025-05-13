@@ -1,7 +1,8 @@
+import calendar
 import os
+
 import matplotlib.pyplot as plt
 import numpy as np
-import calendar
 
 
 def visualize_predictions(station_id, hourly_avg, forecast_df, current_time, data_df, save_dir="graphs"):
@@ -63,4 +64,3 @@ def visualize_predictions(station_id, hourly_avg, forecast_df, current_time, dat
     plt.close()
 
     return filepath
-    plt.show()
