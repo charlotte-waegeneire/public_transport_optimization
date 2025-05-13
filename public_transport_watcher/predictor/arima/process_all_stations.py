@@ -117,7 +117,6 @@ def run_all_stations(optimize=False, limit=None):
         except Exception as e:
             logger.error(f"Error processing station {station_id}: {e}")
 
-    # Save all parameters
     save_params(station_params)
 
     logger.info(f"Completed predictions for {len(results)} stations")
