@@ -31,10 +31,6 @@ def _get_exact_same_days(data_df, current_month, current_day_of_week):
     common_cat_day = exact_same_days["cat_day"].mode().iloc[0] if not exact_same_days.empty else None
 
     if common_cat_day:
-        logger.info(
-            f"Most frequent day category for {calendar.day_name[current_day_of_week]} "
-            f"in {calendar.month_name[current_month]}: {common_cat_day}"
-        )
         exact_same_days = exact_same_days[exact_same_days["cat_day"] == common_cat_day]
 
     return exact_same_days
@@ -84,7 +80,6 @@ def _apply_arima_model(recent_data, current_hour, arima_params, hourly_avg_weigh
             logger.info(f"\nARIMA{arima_params} predictions for next 2 hours:")
             logger.info(str(arima_forecast))
 
-            # Calculate confidence score for ARIMA
             if current_hour in hourly_avg_weighted and hourly_avg_weighted[current_hour] > 0:
                 arima_ratio = min(
                     arima_forecast.iloc[0] / hourly_avg_weighted[current_hour],
@@ -126,7 +121,6 @@ def _calculate_weights(hourly_avg_weighted, very_recent_obs, arima_confidence, h
             historical = hourly_avg_weighted[hour]
             recent = very_recent_obs[hour]
 
-            # Calculate ratio between historical and recent
             if historical > 0 and recent > 0:
                 ratio = min(historical / recent, recent / historical)
                 recent_variance[hour] = ratio
@@ -146,9 +140,6 @@ def _calculate_weights(hourly_avg_weighted, very_recent_obs, arima_confidence, h
         "arima": arima_weight / total_weight,
     }
 
-    logger.info("\nMethod weighting:")
-    for method, weight in weights.items():
-        logger.info(f"- {method}: {weight:.1%}")
 
     return weights
 
@@ -190,9 +181,6 @@ def _adjust_current_hour_forecast(forecast_df, current_time):
     fraction_remaining = minutes_remaining / 60
 
     forecast_df.iloc[0, 0] *= fraction_remaining
-    logger.info(
-        f"\nAdjustment for current hour: {minutes_remaining} minutes remaining ({fraction_remaining:.1%} of hour)"
-    )
 
     return forecast_df
 

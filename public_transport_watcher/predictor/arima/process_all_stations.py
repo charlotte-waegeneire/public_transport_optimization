@@ -68,7 +68,6 @@ def save_params(station_params):
         station_params (dict): Dictionary of station_id -> params
     """
     try:
-        # Make sure the directory exists
         os.makedirs(os.path.dirname(PARAMS_FILE), exist_ok=True)
 
         with open(PARAMS_FILE, "w") as f:
@@ -86,29 +85,24 @@ def run_all_stations(optimize=False, limit=None):
         optimize (bool): If True, re-optimize parameters for each station
         limit (int): Maximum number of stations to process
     """
-    # Import here to avoid circular dependency
     from public_transport_watcher.predictor.arima_predictions import ArimaPredictor
 
     predictor = ArimaPredictor()
 
-    # Get all station IDs
     station_ids = get_all_stations_with_traffic()
 
     if limit and len(station_ids) > limit:
         logger.info(f"Limiting to {limit} stations out of {len(station_ids)}")
         station_ids = station_ids[:limit]
 
-    # Load existing parameters
     station_params = load_existing_params()
 
     results = {}
 
-    # Process each station
     for i, station_id in enumerate(station_ids, 1):
         logger.info(f"Processing station {station_id} ({i}/{len(station_ids)})")
 
         try:
-            # Run prediction for this station
             predictions, total = predictor.predict_for_station(station_id, optimize_params=optimize)
 
             if predictions is not None:
@@ -117,7 +111,6 @@ def run_all_stations(optimize=False, limit=None):
                     "arima_params": predictor.station_params.get(station_id),
                 }
 
-                # Update our params dictionary
                 if station_id in predictor.station_params:
                     station_params[str(station_id)] = predictor.station_params[station_id]
 
@@ -129,7 +122,6 @@ def run_all_stations(optimize=False, limit=None):
 
     logger.info(f"Completed predictions for {len(results)} stations")
 
-    # Log a summary of the results
     logger.info("=== Prediction Summary ===")
     for station_id, data in results.items():
         logger.info(

@@ -45,7 +45,6 @@ class ArimaPredictor:
                 logger.error(f"No data available for station {station_id}")
                 return None, 0
 
-            # Check if station_id exists as a string key
             if str(station_id) in self.station_params:
                 self.station_params[station_id] = self.station_params[str(station_id)]
 

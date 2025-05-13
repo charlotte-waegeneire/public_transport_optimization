@@ -3,14 +3,12 @@
 import os
 from pathlib import Path
 
-# Define the directory where this file is located
 CONFIG_DIR = Path(os.path.dirname(os.path.abspath(__file__)))
 ARIMA_DIR = CONFIG_DIR.parent
 
 ARIMA_CONFIG = {
     "graphs_dir": os.path.join(ARIMA_DIR, "model_performance", "graphs"),
     "params_station_file": os.path.join(CONFIG_DIR, "station_arima_params.json"),
-    # Define the ARIMA parameter ranges
     "p_range": [0, 1, 2],
     "d_range": [0, 1],
     "q_range": [0, 1, 2],

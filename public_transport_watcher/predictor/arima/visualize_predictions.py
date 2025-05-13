@@ -61,6 +61,4 @@ def visualize_predictions(station_id, hourly_avg, forecast_df, current_time, dat
     filename = f"prediction_station_{station_id}_{timestamp}.png"
     filepath = os.path.join(save_dir, filename)
     plt.savefig(filepath)
-    plt.close()
-
-    return filepath
+    return plt
