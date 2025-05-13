@@ -10,7 +10,7 @@ os.makedirs(LOG_DIR, exist_ok=True)
 
 logger = logging.getLogger("public_transport_watcher")
 if not logger.handlers:  # Only configure if not already done
-    logger.setLevel(logging.DEBUG)
+    logger.setLevel(logging.WARNING)
 
     console_handler = logging.StreamHandler(sys.stdout)
     console_handler.setLevel(logging.INFO)

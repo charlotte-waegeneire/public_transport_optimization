@@ -5,6 +5,7 @@ import pandas as pd
 from public_transport_watcher.logging_config import get_logger
 from public_transport_watcher.predictor.configuration import PREDICTION_CONFIG
 from public_transport_watcher.predictor.graph import (
+    adjust_station_weights,
     calculate_travel_time,
     create_transport_network,
     find_nearest_station_with_walk,
@@ -83,6 +84,10 @@ class GraphBuilder:
             "optimal_path": optimal_path,
             "route_info": route_info,
         }
+
+    def adjust_station_weights(self, frequency_data: pd.DataFrame):
+        G = self.load_graph()
+        return adjust_station_weights(G, frequency_data, **self.graph_config.get("adjust_station_weights", {}))
 
 
 if __name__ == "__main__":

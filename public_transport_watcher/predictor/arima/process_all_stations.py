@@ -18,8 +18,10 @@ def get_all_stations_with_traffic():
     """
     Retrieves a list of all station IDs that have traffic data in the database.
 
-    Returns:
-        list: List of station IDs
+    Returns
+    -------
+    list
+        List of station IDs
     """
     engine = get_engine()
     Session = sessionmaker(bind=engine)
@@ -45,8 +47,10 @@ def load_existing_params():
     """
     Load existing ARIMA parameters from the JSON file.
 
-    Returns:
-        dict: Dictionary of station_id -> params
+    Returns
+    -------
+    dict
+        Dictionary of station_id -> params
     """
     if os.path.exists(PARAMS_FILE):
         try:
@@ -64,8 +68,10 @@ def save_params(station_params):
     """
     Save the ARIMA parameters to the JSON file.
 
-    Args:
-        station_params (dict): Dictionary of station_id -> params
+    Parameters
+    ----------
+    station_params : dict
+        Dictionary of station_id -> params
     """
     try:
         os.makedirs(os.path.dirname(PARAMS_FILE), exist_ok=True)
@@ -81,9 +87,12 @@ def run_all_stations(optimize=False, limit=None):
     """
     Run ARIMA predictions for all stations.
 
-    Args:
-        optimize (bool): If True, re-optimize parameters for each station
-        limit (int): Maximum number of stations to process
+    Parameters
+    ----------
+    optimize : bool
+        If True, re-optimize parameters for each station
+    limit : int
+        Maximum number of stations to process
     """
     from public_transport_watcher.predictor.arima_predictions import ArimaPredictor
 
@@ -117,7 +126,6 @@ def run_all_stations(optimize=False, limit=None):
         except Exception as e:
             logger.error(f"Error processing station {station_id}: {e}")
 
-    # Save all parameters
     save_params(station_params)
 
     logger.info(f"Completed predictions for {len(results)} stations")

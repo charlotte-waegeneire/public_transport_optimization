@@ -2,6 +2,7 @@ import json
 import math
 import os
 
+import pandas as pd
 from sklearn.metrics import mean_squared_error
 from statsmodels.tsa.arima.model import ARIMA
 
@@ -61,22 +62,42 @@ def _save_station_params(station_id, params, station_params, params_file):
         logger.error(f"Error saving ARIMA parameters for station {station_id}: {e}")
 
 
-def find_optimal_params(station_id, df, p_range, d_range, q_range, station_params, params_file, train_ratio=0.8):
+def find_optimal_params(
+    station_id: int,
+    df: pd.DataFrame,
+    p_range: list,
+    d_range: list,
+    q_range: list,
+    station_params: dict,
+    params_file: str,
+    train_ratio: float = 0.8,
+) -> tuple:
     """
     Find optimal ARIMA parameters for a station.
 
-    Args:
-        station_id (int): Station ID
-        df (DataFrame): Station data
-        p_range (list): Range of p values to try
-        d_range (list): Range of d values to try
-        q_range (list): Range of q values to try
-        station_params (dict): Dictionary of existing parameters
-        params_file (str): Path to consolidated parameters file
-        train_ratio (float): Ratio of data to use for training
+    Parameters
+    ----------
+    station_id : int
+        Station ID
+    df : pd.DataFrame
+        Station data
+    p_range : list
+        Range of p values to try
+    d_range : list
+        Range of d values to try
+    q_range : list
+        Range of q values to try
+    station_params : dict
+        Dictionary of existing parameters
+    params_file : str
+        Path to consolidated parameters file
+    train_ratio : float
+        Ratio of data to use for training
 
-    Returns:
-        tuple: Optimal ARIMA parameters (p, d, q)
+    Returns
+    -------
+    tuple
+        Optimal ARIMA parameters (p, d, q)
     """
     if station_id in station_params:
         return station_params[station_id]

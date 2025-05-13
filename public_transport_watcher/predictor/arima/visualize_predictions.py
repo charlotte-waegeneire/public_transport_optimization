@@ -1,11 +1,42 @@
 import calendar
+import datetime
 import os
 
 import matplotlib.pyplot as plt
 import numpy as np
+import pandas as pd
 
 
-def visualize_predictions(station_id, hourly_avg, forecast_df, current_time, data_df, save_dir="graphs"):
+def visualize_predictions(
+    station_id: int,
+    hourly_avg: dict,
+    forecast_df: pd.DataFrame,
+    current_time: datetime,
+    data_df: pd.DataFrame,
+    save_dir: str = "graphs",
+) -> plt.Figure:
+    """
+    Visualize predictions for a station.
+
+    Parameters
+    ----------
+    station_id : int
+        Station ID
+    hourly_avg : dict
+        Hourly average
+    forecast_df : pd.DataFrame
+        Forecast data
+    current_time : datetime
+        Current time
+    data_df : pd.DataFrame
+        Data
+    save_dir : str
+        Save directory
+
+    Returns
+    -------
+    plt.Figure
+    """
     os.makedirs(save_dir, exist_ok=True)
 
     current_hour = current_time.hour

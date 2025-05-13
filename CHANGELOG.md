@@ -5,6 +5,15 @@ All notable changes to this project will be documented in this file.
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.1.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## [0.15.0] - 2025-05-15
+MR #16
+
+### Added
+- `predict_for_all_stations` method in the arima class
+- `adjust_station_weights` method in the graph class
+- `predictor` object to bring everything together
+- Forgotten type hints in arima/graph functions
+
 ## [0.14.0] - 2025-05-11
 MR #15
 
