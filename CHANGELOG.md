@@ -12,9 +12,11 @@ MR #16
 - Streamlit core interface with user authentication
 - Simple and quick schema for the user CRUD
 - Streamlit to `setup.py` requirements
+- Dashboard example page
 
 ### Changed
 - `get_sql_query` from `extractor` to utils folder for global use
+- Moved all queries to utils folder for easier use of queries through the whole project
 
 ## [0.12.0] - 2025-05-09
 MR #13
