@@ -140,7 +140,6 @@ def _calculate_weights(hourly_avg_weighted, very_recent_obs, arima_confidence, h
         "arima": arima_weight / total_weight,
     }
 
-
     return weights
 
 

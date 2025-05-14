@@ -7,19 +7,19 @@ import numpy as np
 
 def visualize_predictions(station_id, hourly_avg, forecast_df, current_time, data_df, save_dir="graphs"):
     """
-        Generate and save validation prediction chart for a specific station.
+    Generate and save validation prediction chart for a specific station.
 
-        Args:
-            station_id (str): Station identifier
-            hourly_avg (Dict[int, float]): Average validations by hour (0-23)
-            forecast_df (pd.DataFrame): Predictions with 'forecast_complete' column
-            current_time (datetime): Current time
-            data_df (pd.DataFrame): Historical data with 'hour' and 'validations' columns
-            save_dir (str, optional): Directory to save charts. Defaults to "graphs".
+    Args:
+        station_id (str): Station identifier
+        hourly_avg (Dict[int, float]): Average validations by hour (0-23)
+        forecast_df (pd.DataFrame): Predictions with 'forecast_complete' column
+        current_time (datetime): Current time
+        data_df (pd.DataFrame): Historical data with 'hour' and 'validations' columns
+        save_dir (str, optional): Directory to save charts. Defaults to "graphs".
 
-        Returns:
-            str: Path to saved chart file
-        """
+    Returns:
+        str: Path to saved chart file
+    """
     os.makedirs(save_dir, exist_ok=True)
 
     current_hour = current_time.hour
