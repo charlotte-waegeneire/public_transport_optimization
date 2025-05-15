@@ -16,7 +16,7 @@ if not logger.handlers:  # Only configure if not already done
     console_handler.setLevel(logging.WARNING)
 
     file_handler = TimedRotatingFileHandler(LOG_FILE, when="midnight", interval=1, backupCount=30)
-    file_handler.setLevel(logging.DEBUG)
+    file_handler.setLevel(logging.INFO)
     file_handler.suffix = "%Y-%m-%d"
 
     console_format = logging.Formatter("%(levelname)s - %(message)s")

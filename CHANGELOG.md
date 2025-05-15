@@ -13,6 +13,7 @@ MR #16
 - `adjust_station_weights` method in the graph class
 - `predictor` object to bring everything together
 - Forgotten type hints in arima/graph functions
+- `matplotlib` and `networkx` in requirements
 
 ### Modified
 - `console_handler` in the logging config to only show WARNING and above
