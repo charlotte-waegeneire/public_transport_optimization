@@ -10,10 +10,10 @@ os.makedirs(LOG_DIR, exist_ok=True)
 
 logger = logging.getLogger("public_transport_watcher")
 if not logger.handlers:  # Only configure if not already done
-    logger.setLevel(logging.WARNING)
+    logger.setLevel(logging.INFO)
 
     console_handler = logging.StreamHandler(sys.stdout)
-    console_handler.setLevel(logging.INFO)
+    console_handler.setLevel(logging.WARNING)
 
     file_handler = TimedRotatingFileHandler(LOG_FILE, when="midnight", interval=1, backupCount=30)
     file_handler.setLevel(logging.DEBUG)

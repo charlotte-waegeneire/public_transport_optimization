@@ -14,6 +14,9 @@ MR #16
 - `predictor` object to bring everything together
 - Forgotten type hints in arima/graph functions
 
+### Modified
+- `console_handler` in the logging config to only show WARNING and above
+
 ## [0.14.0] - 2025-05-11
 MR #15
 
