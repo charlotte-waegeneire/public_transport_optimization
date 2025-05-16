@@ -1,12 +1,9 @@
-"""Utility module to execute SQL queries and return results as pandas DataFrames."""
-
 from typing import Dict, List, Optional, Union
 
 import pandas as pd
 
-from public_transport_watcher.extractor.sql import get_sql_query
-
 from .get_engine import get_engine
+from .get_sql_query import get_sql_query
 
 
 def get_query_result(
