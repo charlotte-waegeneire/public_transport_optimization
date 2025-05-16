@@ -1,14 +1,11 @@
-from dotenv import load_dotenv
 import requests
-
-from public_transport_watcher.logging_config import get_logger
-
-logger = get_logger()
-
-load_dotenv()
 
 
 def fetch_generic_api_data(url, headers=None, params=None, method="GET"):
+    from public_transport_watcher.logging_config import get_logger
+
+    logger = get_logger()
+
     try:
         if method == "GET":
             response = requests.get(url, headers=headers, params=params)

@@ -127,7 +127,7 @@ venv.bak/
 # Local stuff
 sandbox
 logs
-
+postgresql-42.7.5.jar
 # Spyder project settings
 .spyderproject
 .spyproject
