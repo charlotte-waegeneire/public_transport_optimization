@@ -1,5 +1,7 @@
 from math import asin, cos, radians, sin, sqrt
 
+import networkx as nx
+
 
 def _haversine(lat1, lon1, lat2, lon2):
     lat1, lon1, lat2, lon2 = map(radians, [lat1, lon1, lat2, lon2])
@@ -11,7 +13,13 @@ def _haversine(lat1, lon1, lat2, lon2):
     return c * r * 1000  # meters
 
 
-def find_nearest_station_with_walk(point_lat, point_lon, transport_graph, max_distance=10.0, walking_speed_kmh=4.5):
+def find_nearest_station_with_walk(
+    point_lat: float,
+    point_lon: float,
+    transport_graph: nx.Graph,
+    max_distance: float = 10.0,
+    walking_speed_kmh: float = 4.5,
+) -> dict:
     """
     Find the nearest station and calculate the walking distance/duration.
 

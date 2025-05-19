@@ -55,7 +55,7 @@ def _add_edge_with_attributes(G, from_station, to_station, schedule, weight):
     )
 
 
-def create_transport_network(stations_df, schedules_df):
+def create_transport_network(stations_df: pd.DataFrame, schedules_df: pd.DataFrame) -> nx.DiGraph:
     """
     Create a directed graph representing the transport network where:
     - Nodes are stations with attributes

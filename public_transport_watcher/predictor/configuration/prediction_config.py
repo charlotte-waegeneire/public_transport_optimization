@@ -5,6 +5,11 @@ from public_transport_watcher.utils import get_env_variable
 PREDICTION_CONFIG = {
     "graph": {
         "network_path": get_env_variable("NETWORK_PATH"),
+        "adjust_station_weights": {
+            "weight_factor": 0.1,
+            "min_factor": 0.5,
+            "max_factor": 1.5,
+        },
     },
     "arima": {
         "graphs_dir": "graphs",

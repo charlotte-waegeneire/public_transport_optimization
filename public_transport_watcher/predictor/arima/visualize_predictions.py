@@ -1,24 +1,41 @@
 import calendar
+import datetime
 import os
 
 import matplotlib.pyplot as plt
 import numpy as np
+import pandas as pd
 
 
-def visualize_predictions(station_id, hourly_avg, forecast_df, current_time, data_df, save_dir="graphs"):
+def visualize_predictions(
+    station_id: int,
+    hourly_avg: dict,
+    forecast_df: pd.DataFrame,
+    current_time: datetime,
+    data_df: pd.DataFrame,
+    save_dir: str = "graphs",
+) -> plt.Figure:
     """
-    Generate and save validation prediction chart for a specific station.
+    Visualize predictions for a station.
 
-    Args:
-        station_id (str): Station identifier
-        hourly_avg (Dict[int, float]): Average validations by hour (0-23)
-        forecast_df (pd.DataFrame): Predictions with 'forecast_complete' column
-        current_time (datetime): Current time
-        data_df (pd.DataFrame): Historical data with 'hour' and 'validations' columns
-        save_dir (str, optional): Directory to save charts. Defaults to "graphs".
+    Parameters
+    ----------
+    station_id : int
+        Station ID
+    hourly_avg : dict
+        Hourly average
+    forecast_df : pd.DataFrame
+        Forecast data
+    current_time : datetime
+        Current time
+    data_df : pd.DataFrame
+        Data
+    save_dir : str
+        Save directory
 
-    Returns:
-        str: Path to saved chart file
+    Returns
+    -------
+    plt.Figure
     """
     os.makedirs(save_dir, exist_ok=True)
 

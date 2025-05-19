@@ -209,17 +209,23 @@ def _finalize_forecast(forecast_df):
     return forecast_df, total_validations
 
 
-def predict_navigo_validations(df, station_id, arima_params):
+def predict_navigo_validations(df: pd.DataFrame, station_id: int, arima_params: tuple) -> tuple:
     """
     Enhanced prediction model that combines historical averages, recent trends, and ARIMA models.
 
-    Args:
-        df (DataFrame): Station data
-        station_id (int): Station ID
-        arima_params (tuple): ARIMA parameters (p, d, q)
+    Parameters
+    ----------
+    df : pd.DataFrame
+        Station data
+    station_id : int
+        Station ID
+    arima_params : tuple
+        ARIMA parameters (p, d, q)
 
-    Returns:
-        tuple: (predictions DataFrame, total validations)
+    Returns
+    -------
+    tuple
+        (predictions DataFrame, total validations)
     """
     data_df = preprocess_data(df, station_id)
 
