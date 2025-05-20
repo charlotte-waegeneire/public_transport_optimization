@@ -4,22 +4,16 @@
 
 ### Find Optimal Path API
 
-The API provides a route to find the optimal path between two coordinate points.
-
-#### Endpoint
-
 ```
 GET /api/v1/routes/optimal
 ```
-
-#### Headers
 
 | Header | Type | Description | Example |
 |--------|------|-------------|---------|
 | start_coords | String | Starting coordinates as a tuple of (latitude, longitude) | "(48.855089551123996, 2.394484471898831)" |
 | end_coords | String | Ending coordinates as a tuple of (latitude, longitude) | "(48.8272425814562, 2.3787827042461736)" |
 
-#### Response
+Response pattern :
 
 ```json
 {
