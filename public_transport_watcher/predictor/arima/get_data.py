@@ -7,16 +7,19 @@ from public_transport_watcher.utils import get_engine
 logger = get_logger()
 
 
-def get_data_from_db(station_id=None):
+def get_data_from_db(station_id: int | None = None) -> pd.DataFrame | None:
     """
     Retrieves traffic data from the database.
 
-    Args:
-        station_id (int, optional): ID of the station to analyze. If None,
-                                    retrieves data for all stations.
+    Parameters
+    ----------
+    station_id : int, optional
+        ID of the station to analyze. If None, retrieves data for all stations.
 
-    Returns:
-        DataFrame: Traffic data with timestamps
+    Returns
+    -------
+    pd.DataFrame
+        Traffic data with timestamps
     """
     if station_id is None:
         logger.error("Station ID is required.")

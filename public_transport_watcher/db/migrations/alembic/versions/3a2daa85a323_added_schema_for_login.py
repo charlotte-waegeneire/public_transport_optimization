@@ -21,6 +21,7 @@ def upgrade() -> None:
     """Upgrade schema."""
     schema_name = "application"
     op.execute(f"CREATE SCHEMA IF NOT EXISTS {schema_name}")
+
     op.create_table(
         "users",
         sa.Column("id", sa.Integer(), nullable=False),
@@ -41,3 +42,4 @@ def downgrade() -> None:
     schema_name = "application"
     op.drop_table("users", schema=schema_name)
     op.execute(f"DROP SCHEMA IF EXISTS {schema_name} CASCADE")
+    op.drop_table("users")

@@ -189,7 +189,9 @@ def _create_route_info(G, path, path_extended, extended_G, path_length):
     return route_info
 
 
-def find_optimal_route(G, start_station_id, end_station_id, transfer_penalty=5.0):
+def find_optimal_route(
+    G: nx.DiGraph, start_station_id: int, end_station_id: int, transfer_penalty: float = 5.0
+) -> tuple[list, float, dict]:
     """
     Find the optimal route between two stations with proper handling of transfer penalties
 

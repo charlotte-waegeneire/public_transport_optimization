@@ -3,7 +3,21 @@ import pandas as pd
 from public_transport_watcher.logging_config import logger
 
 
-def preprocess_data(df, station_id):
+def preprocess_data(df: pd.DataFrame, station_id: int) -> pd.DataFrame:
+    """
+    Preprocess the data for the ARIMA model.
+
+    Parameters
+    ----------
+    df : pd.DataFrame
+        Station data
+    station_id : int
+        Station ID
+
+    Returns
+    -------
+    pd.DataFrame
+    """
     station_data = df[df["station_id"] == station_id].copy()
 
     station_data = station_data.sort_index()

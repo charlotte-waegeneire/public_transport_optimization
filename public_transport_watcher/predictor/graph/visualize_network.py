@@ -2,7 +2,7 @@ import matplotlib.pyplot as plt
 import networkx as nx
 
 
-def visualize_network(G, node_size=50, with_labels=False):
+def visualize_network(G: nx.DiGraph, node_size: int = 50, with_labels: bool = False) -> None:
     """
     Visualize the transport network using geographical coordinates
 

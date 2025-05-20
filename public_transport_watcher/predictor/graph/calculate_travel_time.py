@@ -2,7 +2,7 @@ import numpy as np
 import pandas as pd
 
 
-def calculate_travel_time(schedules_df):
+def calculate_travel_time(schedules_df: pd.DataFrame) -> pd.DataFrame:
     """
     Calculate travel time in minutes between stations based on schedule data
 
