@@ -5,13 +5,15 @@ All notable changes to this project will be documented in this file.
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.1.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
-<<<<<<< HEAD
 ## [0.15.0] - 2025-05-18
 MR #18
 
 ### Added
 - Logstash configuration
 - API logging file suite for Logstash needs
+- Test route
+- API readme part
+- Heathcheck for database docker compose config
 
 ## [0.13.0] - 2025-05-13
 MR #16
@@ -25,7 +27,7 @@ MR #16
 ### Changed
 - `get_sql_query` from `extractor` to utils folder for global use
 - Moved all queries to utils folder for easier use of queries through the whole project
-=======
+
 ## [0.16.0] - 2025-05-15
 MR #17
 
@@ -38,7 +40,6 @@ MR #17
 
 ### Modified
 - `console_handler` in the logging config to only show WARNING and above
->>>>>>> main
 
 ## [0.14.0] - 2025-05-11
 MR #15
