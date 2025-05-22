@@ -11,6 +11,35 @@ services:
     volumes:
       - postgres_data:/var/lib/postgresql/data
     restart: unless-stopped
+    healthcheck:
+      test: ["CMD", "pg_isready", "-U", "${DB_USER}", "-d", "${DB_NAME}"]
+      interval: 10s
+      timeout: 5s
+      retries: 5
+      start_period: 10s
+
+  logstash01:
+    build:
+      context: .
+      dockerfile: Dockerfile
+    labels:
+      co.elastic.logs/module: logstash
+    volumes:
+      - certs:/usr/share/logstash/certs
+      - logstashdata01:/usr/share/logstash/data
+      - "./logstash_ingest_data/:/usr/share/logstash/ingest_data/"
+      - "./logstash_ingest_data/jdbc/:/usr/share/logstash/jdbc/"
+      - "./logstash.conf:/usr/share/logstash/pipeline/logstash.conf:ro"
+      - ${LOGS_ROOT}:/usr/share/logstash/logs
+    environment:
+      - LOGS_ROOT=/usr/share/logstash/logs
+      - DB_HOST=host.docker.internal
+      - DB_PORT=${DB_PORT}
+      - DB_NAME=${DB_NAME}
+      - DB_USER=${DB_USER}
+      - DB_PASSWORD=${DB_PASSWORD}
 
 volumes:
   postgres_data:
+  certs:
+  logstashdata01:
