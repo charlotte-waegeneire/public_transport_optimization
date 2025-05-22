@@ -3,8 +3,10 @@ from logging.handlers import TimedRotatingFileHandler
 import os
 import sys
 
-LOG_DIR = "logs"
-LOG_FILE = os.path.join(LOG_DIR, "transport_watcher.log")
+from public_transport_watcher.utils import get_env_variable
+
+LOG_DIR = get_env_variable("LOGS_ROOT")
+LOG_FILE = os.path.join(LOG_DIR, "services", "transport_watcher.log")
 
 os.makedirs(LOG_DIR, exist_ok=True)
 

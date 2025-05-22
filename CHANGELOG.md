@@ -5,14 +5,26 @@ All notable changes to this project will be documented in this file.
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.1.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+
 ## [0.18.0] - 2025-05-22
-MR #19
+MR #20
 
 ### Added
 - Alembic migration for the new field `name` in transport table
 - Extraction and insertion of `name` for transport table
 - Dashboard visualisations
 - Queries for the dashboard
+
+## [0.17.0] - 2025-05-18
+MR #19
+
+### Added
+- Logstash configuration
+- API logging file suite for Logstash needs
+- Test route
+- API readme part
+- Heathcheck for database docker compose config
+
 
 ## [0.16.0] - 2025-05-15
 MR #17
@@ -28,14 +40,24 @@ MR #17
 - `console_handler` in the logging config to only show WARNING and above
 
 ## [0.14.0] - 2025-05-11
-MR #15
 **/!\ Wrong version number, should've been 0.15.0**
+MR #15
 
 ### Added
 - Adaptative predictions using ARIMA model, with custom parameter for each station by finding the optimimal ones
 - Combined time-weighted historical data, recent observations, and ARIMA models
 
-## [0.13.0] - 2025-13-05
+## [0.14.0] - 2025-05-09
+MR #14
+
+### Added
+- Calculation of the walking trip to reach the nearest station using the graph
+
+### Changed
+- `graph_builder.find_optimal_route` to use this new function to calculate the whole journey
+- Transfers duration from 5 minutes to 3
+
+## [0.13.0] - 2025-05-13
 MR #16
 
 ### Added
@@ -47,16 +69,6 @@ MR #16
 ### Changed
 - `get_sql_query` from `extractor` to utils folder for global use
 - Moved all queries to utils folder for easier use of queries through the whole project
-
-## [0.13.0] - 2025-05-09
-MR #14
-
-### Added
-- Calculation of the walking trip to reach the nearest station using the graph
-
-### Changed
-- `graph_builder.find_optimal_route` to use this new function to calculate the whole journey
-- Transfers duration from 5 minutes to 3
 
 ## [0.12.0] - 2025-05-06
 MR #13
