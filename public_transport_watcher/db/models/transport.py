@@ -27,6 +27,7 @@ class Transport(Base):
     __table_args__ = {"schema": transport_schema}
 
     id = Column(Integer, primary_key=True)
+    name = Column(String(100), nullable=True)
     type_id = Column(Integer, ForeignKey(f"{transport_schema}.categ.id"))
 
     type = relationship("Categ", back_populates="transports")
