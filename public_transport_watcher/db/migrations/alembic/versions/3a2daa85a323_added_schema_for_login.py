@@ -19,6 +19,9 @@ depends_on: Union[str, Sequence[str], None] = None
 
 def upgrade() -> None:
     """Upgrade schema."""
+    schema_name = "application"
+    op.execute(f"CREATE SCHEMA IF NOT EXISTS {schema_name}")
+
     op.create_table(
         "users",
         sa.Column("id", sa.Integer(), nullable=False),
@@ -30,10 +33,13 @@ def upgrade() -> None:
         sa.PrimaryKeyConstraint("id"),
         sa.UniqueConstraint("username"),
         sa.UniqueConstraint("email"),
-        schema="application",
+        schema=schema_name,
     )
 
 
 def downgrade() -> None:
     """Downgrade schema."""
+    schema_name = "application"
+    op.drop_table("users", schema=schema_name)
+    op.execute(f"DROP SCHEMA IF EXISTS {schema_name} CASCADE")
     op.drop_table("users")
