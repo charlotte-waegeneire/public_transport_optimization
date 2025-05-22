@@ -28,9 +28,14 @@ def insert_transport_lines(df: pd.DataFrame) -> None:
 
                 exists = session.get(Transport, row["numeric_id"])
                 if exists:
+                    if not exists.name and pd.notna(row["Name_Line"]):
+                        exists.name = row["Name_Line"]
+                        logger.info(f"Updated name for existing transport {row['numeric_id']}: '{row['Name_Line']}'")
                     continue
 
-                transport = Transport(id=row["numeric_id"], type_id=categ.id)
+                name_value = row["Name_Line"] if pd.notna(row["Name_Line"]) else None
+
+                transport = Transport(id=row["numeric_id"], type_id=categ.id, name=name_value)
                 session.add(transport)
                 inserted += 1
 

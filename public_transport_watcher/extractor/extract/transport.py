@@ -22,12 +22,11 @@ def extract_transport_data() -> pd.DataFrame:
                 f"Sample raw ID_Line values: {df_transport['ID_Line'].sample(min(5, len(df_transport))).tolist()}"
             )
 
-        df_transport = df_transport[["ID_Line", "TransportMode"]].dropna()
+        df_transport = df_transport[["ID_Line", "Name_Line", "TransportMode"]].dropna()
         logger.info(f"After dropna: {len(df_transport)} rows")
 
         df_transport["TransportMode"] = df_transport["TransportMode"].str.strip().str.lower()
 
-        # Original extraction method
         df_transport["numeric_id"] = df_transport["ID_Line"].str.lstrip("C").astype(int)
 
         logger.info(f"Unique numeric_id count: {df_transport['numeric_id'].nunique()}")
