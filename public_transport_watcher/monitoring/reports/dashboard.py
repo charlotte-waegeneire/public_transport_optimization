@@ -1,9 +1,8 @@
 import time
 
-import pandas as pd
-import streamlit as st
-import plotly.express as px
 import altair as alt
+import plotly.express as px
+import streamlit as st
 
 from public_transport_watcher.utils import get_query_result
 
