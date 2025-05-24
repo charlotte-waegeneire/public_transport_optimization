@@ -5,6 +5,20 @@ All notable changes to this project will be documented in this file.
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.1.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## [0.19.0] - 2025-05-24
+MR #21
+
+### Added
+- Load and save weighted network
+- Weight parameters in the API route to get the optimal path
+- Created the application interface to search for path
+- `APP_API_ENDPOINT` variable in `.env.example`
+
+### Fixed
+- `is_transfer` boolean not to count arrival and departure as boolean
+
+### Removed
+- Debug output in Logstash configuration
 
 ## [0.18.0] - 2025-05-22
 MR #20

@@ -164,13 +164,14 @@ def _create_route_info(G, path, path_extended, extended_G, path_length):
             transport_id = edge_data.get("transport_id")
             travel_time = edge_data.get("weight", 5.0)
 
-            is_transfer = current_transport is not None and transport_id != current_transport and transport_id != "End"
-
-            if is_transfer:
-                num_transfers += 1
-
+            is_transfer = False
             if transport_id not in ["Start", "End", "Transfer"]:
+                if current_transport is not None and transport_id != current_transport:
+                    is_transfer = True
+                    num_transfers += 1
                 current_transport = transport_id
+            elif transport_id == "Transfer":
+                is_transfer = True
 
             segment = {
                 "from_station_id": from_station,
