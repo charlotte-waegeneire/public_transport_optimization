@@ -4,7 +4,8 @@ from public_transport_watcher.utils import get_env_variable
 
 PREDICTION_CONFIG = {
     "graph": {
-        "network_path": get_env_variable("NETWORK_PATH"),
+        "base_network_path": get_env_variable("BASE_NETWORK_PATH"),
+        "weighted_network_path": get_env_variable("WEIGHTED_NETWORK_PATH"),
         "adjust_station_weights": {
             "weight_factor": 0.1,
             "min_factor": 0.5,
