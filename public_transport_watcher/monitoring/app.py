@@ -1,7 +1,7 @@
 import streamlit as st
 
 from public_transport_watcher.monitoring.admin import create_new_user, login, show_users
-from public_transport_watcher.monitoring.api_use import journey_search
+from public_transport_watcher.monitoring.api_use import journey_search, dashboard_api
 from public_transport_watcher.monitoring.reports import alerts, dashboard
 
 if "logged_in" not in st.session_state:
@@ -15,13 +15,14 @@ show_users_page = st.Page(show_users, title="Users", icon=":material/person:")
 alerts_page = st.Page(alerts, title="Alerts", icon=":material/notification_important:")
 dashboard_page = st.Page(dashboard, title="Dashboard", icon=":material/dashboard:")
 
+dashboard_api_page = st.Page(dashboard_api, title="Dashboard API", icon=":material/dashboard:")
 journeys_page = st.Page(journey_search, title="Travelers statistics", icon=":material/search:")
 
 if st.session_state.logged_in:
     pg = st.navigation(
         {
             "Dashboard": [dashboard_page, alerts_page],
-            "API Use": [journeys_page],
+            "API Use": [dashboard_api_page, journeys_page],
             "Admin": [create_new_user_page, show_users_page],
         }
     )
