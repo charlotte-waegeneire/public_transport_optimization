@@ -1,0 +1,104 @@
+name: Version Check
+
+on:
+  pull_request:
+    branches: [ main ]
+    paths: [ 'public_transport_watcher/VERSION.txt' ]
+
+jobs:
+  check-version:
+    runs-on: ubuntu-latest
+    
+    steps:
+    - name: Checkout code
+      uses: actions/checkout@v4
+      with:
+        fetch-depth: 0
+    
+    - name: Get current version from main
+      id: main-version
+      run: |
+        git checkout main
+        MAIN_VERSION=$(cat public_transport_watcher/VERSION.txt)
+        echo "version=$MAIN_VERSION" >> $GITHUB_OUTPUT
+        echo "Current version on main: $MAIN_VERSION"
+    
+    - name: Get new version from PR branch
+      id: pr-version
+      run: |
+        git checkout ${{ github.head_ref }}
+        PR_VERSION=$(cat version.txt)
+        echo "version=$PR_VERSION" >> $GITHUB_OUTPUT
+        echo "New version in PR: $PR_VERSION"
+    
+    - name: Validate version format
+      run: |
+        # Check semver format (X.Y.Z)
+        if ! echo "${{ steps.pr-version.outputs.version }}" | grep -E '^[0-9]+\.[0-9]+\.[0-9]+$'; then
+          echo "❌ Error: Version must follow semver format (X.Y.Z)"
+          exit 1
+        fi
+        echo "✅ Valid version format"
+    
+    - name: Compare versions and validate increment
+      run: |
+        MAIN_VERSION="${{ steps.main-version.outputs.version }}"
+        PR_VERSION="${{ steps.pr-version.outputs.version }}"
+        
+        # Extract version components
+        IFS='.' read -r main_major main_minor main_patch <<< "$MAIN_VERSION"
+        IFS='.' read -r pr_major pr_minor pr_patch <<< "$PR_VERSION"
+        
+        echo "Main version: $main_major.$main_minor.$main_patch"
+        echo "PR version: $pr_major.$pr_minor.$pr_patch"
+        
+        # Check that the new version is higher
+        if [[ $pr_major -lt $main_major ]] || 
+           [[ $pr_major -eq $main_major && $pr_minor -lt $main_minor ]] || 
+           [[ $pr_major -eq $main_major && $pr_minor -eq $main_minor && $pr_patch -le $main_patch ]]; then
+          echo "❌ Error: New version ($PR_VERSION) must be higher than current version ($MAIN_VERSION)"
+          exit 1
+        fi
+        
+        # Check that there is only one increment
+        valid_increment=false
+        
+        # Increment patch (X.Y.Z -> X.Y.Z+1)
+        if [[ $pr_major -eq $main_major && $pr_minor -eq $main_minor && $pr_patch -eq $((main_patch + 1)) ]]; then
+          echo "✅ Valid patch increment: $MAIN_VERSION -> $PR_VERSION"
+          valid_increment=true
+        fi
+        
+        # Increment minor (X.Y.Z -> X.Y+1.0)
+        if [[ $pr_major -eq $main_major && $pr_minor -eq $((main_minor + 1)) && $pr_patch -eq 0 ]]; then
+          echo "✅ Valid minor version increment: $MAIN_VERSION -> $PR_VERSION"
+          valid_increment=true
+        fi
+        
+        # Increment major (X.Y.Z -> X+1.0.0)
+        if [[ $pr_major -eq $((main_major + 1)) && $pr_minor -eq 0 && $pr_patch -eq 0 ]]; then
+          echo "✅ Valid major version increment: $MAIN_VERSION -> $PR_VERSION"
+          valid_increment=true
+        fi
+        
+        if [[ $valid_increment == false ]]; then
+          echo "❌ Error: Invalid version increment"
+          echo "Allowed changes from $MAIN_VERSION:"
+          echo "  - Patch: $main_major.$main_minor.$((main_patch + 1))"
+          echo "  - Minor: $main_major.$((main_minor + 1)).0"
+          echo "  - Major: $((main_major + 1)).0.0"
+          echo "Proposed version: $PR_VERSION"
+          exit 1
+        fi
+    
+    - name: Check if version.txt is the only change (optional)
+      run: |
+        # Optional: check if other files have been modified
+        CHANGED_FILES=$(git diff --name-only main..HEAD)
+        if [[ "$CHANGED_FILES" != "public_transport_watcher/VERSION.txt" ]]; then
+          echo "⚠️  Warning: Other files have been modified in addition to VERSION.txt"
+          echo "Modified files:"
+          echo "$CHANGED_FILES"
+        else
+          echo "✅ Only VERSION.txt file has been modified"
+        fi
