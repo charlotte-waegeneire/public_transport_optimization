@@ -6,7 +6,7 @@ import os
 import time
 import uuid
 
-from flask import request
+from flask import Response, request
 
 
 def setup_api_logger():
@@ -43,6 +43,57 @@ def generate_id():
     return str(uuid.uuid4())
 
 
+def extract_response_content(response, status_code):
+    """Extract the actual response content that will be sent to the user."""
+    if status_code == 204:
+        return None
+
+    # Si c'est un tuple (response, status_code)
+    if isinstance(response, tuple):
+        actual_response = response[0]
+    else:
+        actual_response = response
+
+    # Si c'est un objet Response de Flask
+    if isinstance(actual_response, Response):
+        try:
+            # Pour les Response objects, on peut accéder aux données
+            if hasattr(actual_response, "get_data"):
+                data = actual_response.get_data(as_text=True)
+                # Essayer de parser en JSON si possible
+                try:
+                    return json.loads(data)
+                except (json.JSONDecodeError, ValueError):
+                    return data
+            elif hasattr(actual_response, "data"):
+                return (
+                    actual_response.data.decode("utf-8")
+                    if isinstance(actual_response.data, bytes)
+                    else actual_response.data
+                )
+        except Exception:
+            pass
+
+    # Si c'est déjà un dictionnaire (typique pour les API JSON)
+    if isinstance(actual_response, dict):
+        return actual_response
+
+    # Si c'est une liste
+    if isinstance(actual_response, list):
+        return actual_response
+
+    # Si c'est une chaîne
+    if isinstance(actual_response, str):
+        # Essayer de parser en JSON si ça ressemble à du JSON
+        try:
+            return json.loads(actual_response)
+        except (json.JSONDecodeError, ValueError):
+            return actual_response
+
+    # Pour tout autre type, convertir en string en dernier recours
+    return str(actual_response)
+
+
 def log_request(f):
     """Decorator to log API requests with consistent structure for DB ingestion."""
 
@@ -55,15 +106,16 @@ def log_request(f):
         execution_time = (time.time() - start_time) * 1000
 
         if isinstance(response, tuple):
-            response_content = response[0]
-            status_code = response[1]
+            status_code = response[1] if len(response) > 1 else 200
         else:
-            response_content = response
             status_code = 200
+
+        response_content = extract_response_content(response, status_code)
 
         log_id = generate_id()
 
         params = []
+
         for name, value in request.args.items():
             params.append({"id": generate_id(), "name": name, "value": value})
 
@@ -76,6 +128,10 @@ def log_request(f):
             except Exception:
                 pass
 
+        elif request.form:
+            for name, value in request.form.items():
+                params.append({"id": generate_id(), "name": name, "value": value})
+
         log_entry = {
             "log": {
                 "id": log_id,
@@ -84,7 +140,7 @@ def log_request(f):
                 "user_agent": request.user_agent.string or "",
                 "execution_time": execution_time,
                 "request_path": request.path,
-                "response": str(response_content) if status_code != 204 else None,
+                "response": response_content,
             },
             "method": {"name": request.method},
             "status": {
@@ -93,7 +149,7 @@ def log_request(f):
             "parameters": params,
         }
 
-        api_logger.info(json.dumps(log_entry))
+        api_logger.info(json.dumps(log_entry, ensure_ascii=False, default=str))
 
         return response
 
