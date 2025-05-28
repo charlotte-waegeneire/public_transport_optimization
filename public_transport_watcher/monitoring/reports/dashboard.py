@@ -162,8 +162,7 @@ def _display_key_metrics():
 
 def dashboard():
     """Main dashboard function."""
-    st.title("Dashboard")
-
+    st.title("Utilisation des transports publics")
     st.header("📊 Vue d'ensemble")
     st.subheader("Métriques clés")
     _display_key_metrics()

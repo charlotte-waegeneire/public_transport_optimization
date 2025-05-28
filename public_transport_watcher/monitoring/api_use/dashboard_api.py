@@ -149,7 +149,7 @@ def _display_error_analysis():
 
 def dashboard_api():
     """Main dashboard function."""
-    st.title("Dashboard de Monitoring API")
+    st.title("Monitoring de l'API")
 
     sections = [
         ("📊 Vue d'ensemble", "Métriques clés", _display_key_metrics),
