@@ -2,7 +2,7 @@ WITH hourly_traffic AS (
     SELECT
         EXTRACT(DOW FROM timestamp) as day_of_week,
         EXTRACT(HOUR FROM timestamp) as hour_of_day,
-        COUNT(*) as requests_count
+        COUNT(CASE WHEN request_path = '/api/v1/routes/optimal' THEN 1 END) as requests_count
     FROM services.log
     WHERE timestamp >= NOW() - INTERVAL '7 days'
     GROUP BY EXTRACT(DOW FROM timestamp), EXTRACT(HOUR FROM timestamp)

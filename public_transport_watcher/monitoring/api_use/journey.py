@@ -1,5 +1,7 @@
 import streamlit as st
 
+from public_transport_watcher.monitoring.template.display_metrics_container import display_metric_container
+from public_transport_watcher.monitoring.template.format_metrics import format_metric
 from public_transport_watcher.utils import get_query_result
 
 
@@ -21,7 +23,32 @@ def _display_paris_map():
         if len(display_data) > 1000:
             display_data = display_data.nlargest(1000, "request_count")
 
-        st.map(display_data, size="request_count", zoom=11)
+        if len(display_data) > 1000:
+            display_data = display_data.nlargest(1000, "request_count")
+
+        min_size, max_size = 10, 100
+        min_requests = display_data["request_count"].min()
+        max_requests = display_data["request_count"].max()
+
+        if max_requests > min_requests:
+            display_data["size"] = (display_data["request_count"] - min_requests) / (max_requests - min_requests) * (
+                max_size - min_size
+            ) + min_size
+        else:
+            display_data["size"] = min_size
+
+        st.map(display_data, size="size", zoom=11)
+
+        metrics = [
+            ("Nombre de lieux recherchés", format_metric(len(display_data))),
+            ("Nombre de requêtes minimal", format_metric(min_requests)),
+            ("Nombre de requêtes maximal", format_metric(max_requests)),
+        ]
+
+        cols = st.columns(3)
+        for col, (label, value) in zip(cols, metrics):
+            with col:
+                display_metric_container(label, value)
 
     except Exception as e:
         st.error(f"Erreur lors de l'affichage de la carte : {str(e)}")

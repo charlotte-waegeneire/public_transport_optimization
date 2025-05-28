@@ -1,16 +1,12 @@
-import pandas as pd
 import streamlit as st
 import plotly.express as px
+
+from public_transport_watcher.monitoring.template.display_metrics_container import display_metric_container
+from public_transport_watcher.monitoring.template.format_metrics import format_metric
 from public_transport_watcher.utils import get_query_result
 from public_transport_watcher.monitoring.template import get_safe_query_execution
 
 DAYS_OF_WEEK = ["Lundi", "Mardi", "Mercredi", "Jeudi", "Vendredi", "Samedi", "Dimanche"]
-
-CHART_CONFIG = {
-    "line": {"use_container_width": True},
-    "pie": {"use_container_width": True},
-    "heatmap": {"height": 250, "margin": dict(l=80, r=20, t=20, b=40)},
-}
 
 COLUMN_CONFIGS = {
     "performance": {
@@ -30,32 +26,6 @@ COLUMN_CONFIGS = {
 }
 
 
-def _format_metric(value):
-    """Format metrics display."""
-    if value >= 1_000_000:
-        return f"{value / 1_000_000:.1f}M"
-    elif value >= 1_000:
-        return f"{value / 1_000:.1f}K"
-    return f"{value:,.0f}".replace(",", " ")
-
-
-def _create_chart(chart_type, data, **kwargs):
-    """Create chart based on type."""
-    chart_func = getattr(px, chart_type)
-    fig = chart_func(data, **kwargs)
-
-    if chart_type == "imshow" and "heatmap" in kwargs.get("title", "").lower():
-        fig.update_layout(**CHART_CONFIG["heatmap"])
-
-    return fig
-
-
-def _display_metric_container(label, value):
-    """Display metric in bordered container."""
-    with st.container(border=True):
-        st.metric(label, value)
-
-
 def _display_dataframe(data, format_dict, column_config_key, **kwargs):
     """Display formatted dataframe."""
     if data is not None and not data.empty:
@@ -73,50 +43,45 @@ def _display_key_metrics():
     overview = get_query_result("get_overview_stats")
 
     metrics = [
-        ("Requêtes totales (7j)", _format_metric(overview["total_requests"][0])),
-        ("Nb. jours d'activité API", _format_metric(overview["active_days"].iloc[0])),
-        ("Temps réponse moy.", _format_metric(overview["avg_response_time"].iloc[0]) + " ms"),
-        ("Nombre visiteurs", _format_metric(overview["unique_visitors"].iloc[0])),
+        ("Requêtes totales (7j)", format_metric(overview["total_requests"][0])),
+        ("Nb. jours d'activité API", format_metric(overview["active_days"].iloc[0])),
+        ("Temps réponse moy.", format_metric(overview["avg_response_time"].iloc[0]) + " ms"),
+        ("Nombre visiteurs", format_metric(overview["unique_visitors"].iloc[0])),
     ]
 
     cols = st.columns(4)
     for col, (label, value) in zip(cols, metrics):
         with col:
-            _display_metric_container(label, value)
+            display_metric_container(label, value)
 
 
 def _display_traffic_charts():
     """Display main traffic charts."""
-    col1, col2 = st.columns(2)
+    col1, col2 = st.columns([5, 3])
 
-    chart_configs = [
-        {
-            "col": col1,
-            "title": "Trafic par heure (24h)",
-            "query": "get_requests_by_hour",
-            "chart_type": "line",
-            "params": {
-                "x": "hour",
-                "y": "requests_count",
-                "labels": {"hour": "Heure", "requests_count": "Nombre de requêtes"},
-            },
-        },
-        {
-            "col": col2,
-            "title": "Distribution des statuts",
-            "query": "get_status_distribution",
-            "chart_type": "pie",
-            "params": {"values": "count", "names": "description"},
-        },
-    ]
+    with col1:
+        st.subheader("Trafic par heure (24h)")
+        data = get_safe_query_execution("get_requests_by_hour", "Trafic par heure (24h)")
+        if data is not None and not data.empty:
+            fig = px.line(
+                data,
+                x="hour",
+                y="requests_count",
+                labels={"hour": "Heure", "requests_count": "Nombre de requêtes"},
+            )
+            fig.update_layout(margin=dict(t=0))
+            st.plotly_chart(fig, use_container_width=True)
 
-    for config in chart_configs:
-        with config["col"]:
-            st.subheader(config["title"])
-            data = get_safe_query_execution(config["query"], config["title"])
+    with col2:
+        with col2:
+            st.subheader("Distribution statuts")
+            data = get_safe_query_execution("get_status_distribution", "Distribution des statuts")
             if data is not None and not data.empty:
-                fig = _create_chart(config["chart_type"], data, **config["params"])
-                st.plotly_chart(fig, **CHART_CONFIG[config["chart_type"]])
+                fig = px.pie(data, values="count", names="description")
+                fig.update_layout(
+                    legend=dict(orientation="h", yanchor="top", y=-0, xanchor="center", x=0.5), margin=dict(t=0)
+                )
+                st.plotly_chart(fig, use_container_width=True)
 
 
 def _display_performance_table():
@@ -128,7 +93,7 @@ def _display_performance_table():
 
 def _display_activity_heatmap():
     """Display activity heatmap with peak traffic information."""
-    col1, col2 = st.columns([2, 5])
+    col1, col2 = st.columns([3, 5])
 
     with col1:
         st.subheader("Rush Hour")
@@ -138,11 +103,11 @@ def _display_activity_heatmap():
             peak_info = peak_traffic.iloc[0]
             peak_day = DAYS_OF_WEEK[int(peak_info["peak_day"])]
             peak_hour = int(peak_info["peak_hour"])
-            peak_requests = _format_metric(int(peak_info["max_requests"]))
+            peak_requests = format_metric(int(peak_info["max_requests"]))
 
             with st.container(border=True):
                 st.markdown("**Cette semaine :**")
-                st.metric("Jour le plus chargé", f"{peak_day} à {peak_hour}h")
+                st.metric("Pic de trafic", f"{peak_day}\nà {peak_hour}h")
                 st.metric("Nombre de requêtes", peak_requests)
 
     with col2:
@@ -156,7 +121,7 @@ def _display_activity_heatmap():
             fig = px.imshow(
                 matrix, labels=dict(x="Heure", y="Jour", color="Requêtes"), color_continuous_scale="Viridis"
             )
-            fig.update_layout(**CHART_CONFIG["heatmap"])
+            fig.update_layout(height=250, margin=dict(t=20, b=40))
             st.plotly_chart(fig, use_container_width=True)
 
 
@@ -173,6 +138,7 @@ def _display_error_analysis():
             color="error_type",
             labels={"hour": "Heure", "error_count": "Nombre d'erreurs", "error_type": "Type d'erreur"},
         )
+        fig.update_layout(margin=dict(t=0))
         st.plotly_chart(fig, use_container_width=True)
 
     st.subheader("Récapitulatif des erreurs")
