@@ -135,14 +135,14 @@ def display_route_timeline(route_data: Dict):
         st.markdown("🚶 **Walk** from the last station")
 
 
-def display_route_toggle(route_data: Dict, route_type: str, key_suffix: str):
+def display_route_info(route_data: Dict):
     route_summary = get_route_summary_short(route_data)
     transport_summary = get_transport_summary(route_data)
 
-    with st.expander(f"{route_summary}", expanded=False):
-        st.markdown(f"**Transport:** {transport_summary}")
-        st.markdown("---")
-        display_route_timeline(route_data)
+    st.markdown(f"**{route_summary}**")
+    st.markdown(f"**Transport:** {transport_summary}")
+    st.markdown("---")
+    display_route_timeline(route_data)
 
 
 def search():
@@ -159,55 +159,65 @@ def search():
     if "route_data_weighted" not in st.session_state:
         st.session_state.route_data_weighted = None
 
-    st.markdown("### 🏠 Your starting point")
+    # Check if we have results to determine layout
+    has_results = st.session_state.route_data_base and st.session_state.route_data_weighted
 
-    def search_start_addresses(query: str) -> List[str]:
-        addresses = search_addresses_api(query)
-        for addr in addresses:
-            st.session_state.addresses_cache[addr["address"]] = addr
-        return [addr["address"] for addr in addresses]
+    # If no results yet, center the search inputs
+    if not has_results:
+        _, center_col, _ = st.columns([1, 2, 1])
+        search_col = center_col
+    else:
+        # If results exist, split into left (search) and right (results)
+        search_col, results_col = st.columns([1, 3], gap="large")
 
-    start_address = st_searchbox(
-        search_function=search_start_addresses,
-        placeholder="Type your starting point...",
-        label="",
-        key="start_search",
-        clear_on_submit=False,
-    )
+    with search_col:
+        st.markdown("### 🏠 Your starting point")
 
-    if start_address and start_address in st.session_state.addresses_cache:
-        start_address_data = st.session_state.addresses_cache[start_address]
-        st.session_state.start_coords = (start_address_data["latitude"], start_address_data["longitude"])
-    elif start_address:
-        st.session_state.start_coords = None
+        def search_start_addresses(query: str) -> List[str]:
+            addresses = search_addresses_api(query)
+            for addr in addresses:
+                st.session_state.addresses_cache[addr["address"]] = addr
+            return [addr["address"] for addr in addresses]
 
-    st.markdown("---")
+        start_address = st_searchbox(
+            search_function=search_start_addresses,
+            placeholder="Type your starting point...",
+            label="",
+            key="start_search",
+            clear_on_submit=False,
+        )
 
-    st.markdown("### 🎯 Your destination")
+        if start_address and start_address in st.session_state.addresses_cache:
+            start_address_data = st.session_state.addresses_cache[start_address]
+            st.session_state.start_coords = (start_address_data["latitude"], start_address_data["longitude"])
+        elif start_address:
+            st.session_state.start_coords = None
 
-    def search_end_addresses(query: str) -> List[str]:
-        addresses = search_addresses_api(query)
-        for addr in addresses:
-            st.session_state.addresses_cache[addr["address"]] = addr
-        return [addr["address"] for addr in addresses]
+        st.markdown("---")
 
-    end_address = st_searchbox(
-        search_function=search_end_addresses,
-        placeholder="Type your destination...",
-        label="",
-        key="end_search",
-        clear_on_submit=False,
-    )
+        st.markdown("### 🎯 Your destination")
 
-    if end_address and end_address in st.session_state.addresses_cache:
-        end_address_data = st.session_state.addresses_cache[end_address]
-        st.session_state.end_coords = (end_address_data["latitude"], end_address_data["longitude"])
-    elif end_address:
-        st.session_state.end_coords = None
+        def search_end_addresses(query: str) -> List[str]:
+            addresses = search_addresses_api(query)
+            for addr in addresses:
+                st.session_state.addresses_cache[addr["address"]] = addr
+            return [addr["address"] for addr in addresses]
 
-    if st.session_state.start_coords and st.session_state.end_coords:
-        _, col2, _ = st.columns([1, 2, 1])
-        with col2:
+        end_address = st_searchbox(
+            search_function=search_end_addresses,
+            placeholder="Type your destination...",
+            label="",
+            key="end_search",
+            clear_on_submit=False,
+        )
+
+        if end_address and end_address in st.session_state.addresses_cache:
+            end_address_data = st.session_state.addresses_cache[end_address]
+            st.session_state.end_coords = (end_address_data["latitude"], end_address_data["longitude"])
+        elif end_address:
+            st.session_state.end_coords = None
+
+        if st.session_state.start_coords and st.session_state.end_coords:
             if st.button("🔍 Find your optimal journey", type="primary", use_container_width=True):
                 with st.spinner("🔍 Finding the optimal route..."):
                     try:
@@ -240,12 +250,15 @@ def search():
                         st.error(f"Error: {str(e)}")
                         st.info("🚧 The optimal route is coming soon!")
 
-    if st.session_state.route_data_base and st.session_state.route_data_weighted:
-        st.markdown("---")
-        st.markdown("## 🎯 **Your route options**")
+    # Display results in the right column when data is available
+    if has_results:
+        with results_col:
+            st.markdown("## 🎯 **Your route options**")
 
-        display_route_toggle(st.session_state.route_data_base, "Standard", "base")
+            st.markdown("### Standard Route")
+            display_route_info(st.session_state.route_data_base)
 
-        st.markdown("")
+            st.markdown("---")
 
-        display_route_toggle(st.session_state.route_data_weighted, "Optimized", "weighted")
+            st.markdown("### Optimized Route")
+            display_route_info(st.session_state.route_data_weighted)

@@ -1,6 +1,13 @@
 import streamlit as st
 
-from public_transport_watcher.application.pages import search
+st.set_page_config(
+    page_title="Find the best route !",
+    page_icon="🚌",
+    layout="wide",
+)
+
+# the previous line codes are needed to avoid streamlit from crashing
+from public_transport_watcher.application.pages import search  # noqa: E402
 
 st.title("Find the best route !")
 
