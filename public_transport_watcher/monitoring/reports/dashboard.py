@@ -140,46 +140,47 @@ def _create_stations_map():
         st.error("Aucune donnée géographique disponible pour les stations")
         return
 
-    required_columns = ['latitude', 'longitude', 'validations']
+    required_columns = ["latitude", "longitude", "validations"]
     if not all(col in stations_data.columns for col in required_columns):
         st.error(f"Colonnes manquantes dans les données. Colonnes requises: {required_columns}")
         st.write("Colonnes disponibles:", list(stations_data.columns))
         return
 
-    map_data = stations_data.dropna(subset=['latitude', 'longitude', 'validations']).copy()
-    map_data = map_data[map_data['validations'] > 0]
+    map_data = stations_data.dropna(subset=["latitude", "longitude", "validations"]).copy()
+    map_data = map_data[map_data["validations"] > 0]
 
     if map_data.empty:
         st.info("Aucune station avec des coordonnées valides trouvée")
         return
 
-    min_validations = map_data['validations'].min()
-    max_validations = map_data['validations'].max()
+    min_validations = map_data["validations"].min()
+    max_validations = map_data["validations"].max()
 
     if max_validations > min_validations:
         if min_validations > 0:
             log_min = np.log(min_validations)
             log_max = np.log(max_validations)
-            map_data['size'] = 20 + 200 * (np.log(map_data['validations']) - log_min) / (log_max - log_min)
+            map_data["size"] = 20 + 200 * (np.log(map_data["validations"]) - log_min) / (log_max - log_min)
         else:
             range_validations = max_validations - min_validations
-            map_data['size'] = 20 + 200 * (map_data['validations'] - min_validations) / range_validations
+            map_data["size"] = 20 + 200 * (map_data["validations"] - min_validations) / range_validations
     else:
-        map_data['size'] = 100
+        map_data["size"] = 100
 
-    map_data['size'] = np.clip(map_data['size'], 20, 220)
+    map_data["size"] = np.clip(map_data["size"], 20, 220)
 
-    map_data = map_data.rename(columns={
-        'latitude': 'lat',
-        'longitude': 'lon'
-    })
+    map_data = map_data.rename(columns={"latitude": "lat", "longitude": "lon"})
 
-    st.map(map_data, size='size', color='#FF6B6B')
+    st.map(map_data, size="size", color="#FF6B6B")
 
     st.caption("💡 La taille des points indique le niveau de fréquentation")
 
     with st.expander("Voir les données détaillées"):
-        display_data = map_data[['station_name', 'validations']].sort_values('validations', ascending=False) if 'station_name' in map_data.columns else map_data[['validations']].sort_values('validations', ascending=False)
+        display_data = (
+            map_data[["station_name", "validations"]].sort_values("validations", ascending=False)
+            if "station_name" in map_data.columns
+            else map_data[["validations"]].sort_values("validations", ascending=False)
+        )
         st.dataframe(display_data, use_container_width=True, hide_index=True)
 
 
