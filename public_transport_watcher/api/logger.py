@@ -48,19 +48,15 @@ def extract_response_content(response, status_code):
     if status_code == 204:
         return None
 
-    # Si c'est un tuple (response, status_code)
     if isinstance(response, tuple):
         actual_response = response[0]
     else:
         actual_response = response
 
-    # Si c'est un objet Response de Flask
     if isinstance(actual_response, Response):
         try:
-            # Pour les Response objects, on peut accéder aux données
             if hasattr(actual_response, "get_data"):
                 data = actual_response.get_data(as_text=True)
-                # Essayer de parser en JSON si possible
                 try:
                     return json.loads(data)
                 except (json.JSONDecodeError, ValueError):
@@ -74,23 +70,18 @@ def extract_response_content(response, status_code):
         except Exception:
             pass
 
-    # Si c'est déjà un dictionnaire (typique pour les API JSON)
     if isinstance(actual_response, dict):
         return actual_response
 
-    # Si c'est une liste
     if isinstance(actual_response, list):
         return actual_response
 
-    # Si c'est une chaîne
     if isinstance(actual_response, str):
-        # Essayer de parser en JSON si ça ressemble à du JSON
         try:
             return json.loads(actual_response)
         except (json.JSONDecodeError, ValueError):
             return actual_response
 
-    # Pour tout autre type, convertir en string en dernier recours
     return str(actual_response)
 
 
