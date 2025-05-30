@@ -1,4 +1,3 @@
-from .journey import journey_search
-from .dashboard_api import dashboard_api
+from .dashboard_data_quality import dashboard_data_quality
 
-__all__ = ["dashboard_api", "journey_search"]
+__all__ = ["dashboard_data_quality"]
