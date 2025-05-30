@@ -2,6 +2,41 @@
 requires = ["setuptools>=42.0", "wheel"]
 build-backend = "setuptools.build_meta"
 
+[project]
+name = "public_transport_watcher"
+version = "0.23.0"
+description = "Public transport optimization and monitoring system"
+readme = "README.md"
+requires-python = ">=3.8"
+dependencies = [
+    "alembic>=1.15,<2.0",
+    "altair>=5.5,<6.0",
+    "beautifulsoup4>=4.12,<5.0",
+    "flask>=3.0.0,<4.0",
+    "matplotlib>=3.10,<4.0",
+    "networkx>=3.4.2,<4.0",
+    "numpy>=2.2.4,<3.0",
+    "pandas>=2.2.3,<3.0",
+    "plotly>=6.0,<7.0",
+    "psycopg2-binary>=2.9,<3.0",
+    "python-dotenv>=1.0,<2.0",
+    "requests>=2.31,<3.0",
+    "schedule>=1.2,<2.0",
+    "scikit-learn>=1.6,<2.0",
+    "sqlalchemy>=2.0,<3.0",
+    "statsmodels>=0.14,<1.0",
+    "streamlit>=1.45.1,<2.0",
+]
+
+[project.optional-dependencies]
+dev = [
+    "ruff>=0.11.0,<1.0",
+]
+
+[tool.setuptools.packages.find]
+where = ["."]
+include = ["public_transport_watcher*"]
+
 [tool.ruff]
 # Maximum line length
 line-length = 120

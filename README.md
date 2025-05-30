@@ -1,5 +1,69 @@
 # Public Transport Optimization
 
+## Useful Commands
+
+### Quick Start
+```bash
+# Set up development environment
+make dev-setup
+
+# See all available commands
+make help
+```
+
+### Development Workflow
+```bash
+# Install dependencies
+make install          # Production dependencies
+make install-dev      # Development dependencies
+
+# Code quality
+make format           # Auto-format code with ruff
+make lint             # Run linting checks
+make test             # Run tests
+make test-coverage    # Run tests with coverage report
+make check            # Run lint + tests (quick validation)
+
+# Clean up
+make clean            # Remove build artifacts and cache
+```
+
+### Running Applications
+```bash
+# Start services
+make run-api          # Start Flask API server (port 5001)
+make run-dashboard    # Start Streamlit dashboard
+make run-scraper      # Run data scraper
+make run-scheduler    # Start scheduler
+
+# Docker services
+make docker-build     # Build Docker images
+make docker-up        # Start all services with docker-compose
+make docker-down      # Stop all services
+make logs             # View docker logs
+```
+
+### Database Management
+```bash
+# Database operations
+make db-init          # Initialize Alembic migrations
+make db-migrate       # Create new migration (prompts for message)
+make db-upgrade       # Apply pending migrations
+make db-downgrade     # Rollback last migration
+make db-seed          # Generate seed data
+make db-reset         # Reset database (with confirmation prompt)
+```
+
+### Distribution & Deployment
+```bash
+# Build and deploy
+make build            # Build distribution packages
+make dist             # Create source and wheel distributions
+make upload-test      # Upload to TestPyPI
+make upload-prod      # Upload to PyPI
+make deploy-prep      # Full pre-deployment check (clean + lint + test + build)
+```
+
 ## API Routes
 
 ### Find Optimal Path API
