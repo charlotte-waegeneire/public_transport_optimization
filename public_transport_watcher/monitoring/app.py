@@ -31,6 +31,6 @@ if st.session_state.logged_in:
         }
     )
 else:
-    pg = st.navigation([login_page, create_new_user_page])
+    pg = st.navigation([login_page])
 
 pg.run()
