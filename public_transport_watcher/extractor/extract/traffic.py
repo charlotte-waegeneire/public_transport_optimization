@@ -1,5 +1,7 @@
-from datetime import datetime
+from datetime import datetime, timedelta
 import os
+import time
+import pickle
 
 import pandas as pd
 import requests
@@ -14,11 +16,13 @@ TRAFFIC_API_KEY = os.getenv("TRAFFIC_API_KEY")
 
 HEADERS = {"apikey": TRAFFIC_API_KEY, "Accept": "application/json"}
 
+DESIRED_TRANSPORT_MODES = ["rail", "metro", "tram"]
+
+CACHE_FILE = "traffic_cache.pkl"
+CACHE_DURATION_MINUTES = 5
+
 
 def _fetch_api_data(line_id: str) -> dict:
-    """
-    Fetches data from the API for a given line ID.
-    """
     params = {"LineRef": line_id}
     try:
         response = requests.get(BASE_URL, headers=HEADERS, params=params)
@@ -39,9 +43,6 @@ def _fetch_api_data(line_id: str) -> dict:
 
 
 def _extract_traffic_data(data: dict) -> pd.DataFrame:
-    """
-    Processes API data for a single line into a DataFrame and cleans the line_ref.
-    """
     line_names, line_refs, statuses, destinations, arrival_times = [], [], [], [], []
 
     if data is None:
@@ -90,9 +91,7 @@ def _extract_traffic_data(data: dict) -> pd.DataFrame:
 
 
 def _extract_lines_data() -> pd.DataFrame:
-    """
-    Loads lines data from the CSV file.
-    """
+    """Extracts lines data from the referential CSV file"""
     try:
         file_path = next(f for f in get_datalake_file("schedule", 2025, "") if "referentiel-des-lignes.csv" in f)
         return pd.read_csv(file_path, sep=";")
@@ -101,32 +100,94 @@ def _extract_lines_data() -> pd.DataFrame:
         return pd.DataFrame()
 
 
-def extract_traffic_data() -> pd.DataFrame:
-    """
-    Processes traffic data for rail lines and merges with lines data.
-    """
+def _is_cache_valid() -> bool:
+    """hecks if cache exists and is still valid"""
+    if not os.path.exists(CACHE_FILE):
+        return False
+
+    try:
+        with open(CACHE_FILE, 'rb') as f:
+            cached_data = pickle.load(f)
+
+        cache_time = cached_data['timestamp']
+        time_diff = datetime.now() - cache_time
+
+        return time_diff < timedelta(minutes=CACHE_DURATION_MINUTES)
+    except:
+        return False
+
+
+def _load_from_cache() -> pd.DataFrame:
+    """Loads data from cache"""
+    try:
+        with open(CACHE_FILE, 'rb') as f:
+            cached_data = pickle.load(f)
+
+        logger.info(f"Données chargées depuis le cache (créé à {cached_data['timestamp'].strftime('%H:%M:%S')})")
+        return cached_data['data']
+    except Exception as e:
+        logger.error(f"Erreur lors du chargement du cache: {e}")
+        return pd.DataFrame()
+
+
+def _save_to_cache(data: pd.DataFrame) -> None:
+    """Saves data to cache"""
+    try:
+        cache_data = {
+            'timestamp': datetime.now(),
+            'data': data
+        }
+
+        with open(CACHE_FILE, 'wb') as f:
+            pickle.dump(cache_data, f)
+
+        logger.info(f"Données sauvegardées en cache ({len(data)} enregistrements)")
+    except Exception as e:
+        logger.error(f"Erreur lors de la sauvegarde du cache: {e}")
+
+
+def _fetch_fresh_data() -> pd.DataFrame:
+    """Retrieves fresh data from the API"""
     lines_df = _extract_lines_data()
     if lines_df.empty:
         return pd.DataFrame()
 
-    rail_lines_df = lines_df[lines_df["TransportMode"] == "rail"]
-    rail_line_ids = ["STIF:Line::" + line_id + ":" for line_id in rail_lines_df["ID_Line"].tolist()]
+    filtered_lines_df = lines_df[
+        lines_df["TransportMode"].isin(DESIRED_TRANSPORT_MODES)
+    ].copy()
 
-    all_line_data = [
-        _extract_traffic_data(_fetch_api_data(line_id)) for line_id in rail_line_ids if _fetch_api_data(line_id)
-    ]
+    if "NetworkName" in filtered_lines_df.columns:
+        filtered_lines_df = filtered_lines_df[
+            filtered_lines_df["NetworkName"].isna() |
+            ~filtered_lines_df["NetworkName"].str.contains("TER", case=False, na=False)
+            ]
+
+    line_ids = ["STIF:Line::" + line_id + ":" for line_id in filtered_lines_df["ID_Line"].tolist()]
+
+    all_line_data = []
+    for i, line_id in enumerate(line_ids):
+        if i > 0 and i % 5 == 0:
+            time.sleep(1)
+
+        api_data = _fetch_api_data(line_id)
+        if api_data:
+            traffic_data = _extract_traffic_data(api_data)
+            if not traffic_data.empty:
+                all_line_data.append(traffic_data)
+
     traffic_df = pd.concat(all_line_data, ignore_index=True) if all_line_data else pd.DataFrame()
 
     if traffic_df.empty:
         return pd.DataFrame()
 
     traffic_df = traffic_df.merge(
-        rail_lines_df,
+        filtered_lines_df,
         left_on="line_ref",
         right_on="ID_Line",
         how="left",
         suffixes=("_df", "_lines"),
     )
+
     return traffic_df[
         [
             "line_name",
@@ -147,3 +208,19 @@ def extract_traffic_data() -> pd.DataFrame:
             "ShortName_GroupOfLines": "full_line_name",
         }
     )
+
+
+def extract_traffic_data() -> pd.DataFrame:
+    """
+    Main function that manages cache and retrieves traffic data
+    """
+    if _is_cache_valid():
+        return _load_from_cache()
+
+    logger.info("Cache expiré ou inexistant, récupération de nouvelles données...")
+    fresh_data = _fetch_fresh_data()
+
+    if not fresh_data.empty:
+        _save_to_cache(fresh_data)
+
+    return fresh_data
