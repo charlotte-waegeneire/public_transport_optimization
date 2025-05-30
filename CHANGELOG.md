@@ -5,6 +5,15 @@ All notable changes to this project will be documented in this file.
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.1.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## [0.24.0] - 2025-05-28
+MR #26
+
+### Added
+- Dashboard for data quality visualisations
+- Queries for the data quality dashboard
+
+### Modified
+- Update for template function `display_data_quality_dashboard`
 
 ## [0.22.0] - 2025-05-28
 MR #24
