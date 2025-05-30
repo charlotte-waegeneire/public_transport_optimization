@@ -180,10 +180,7 @@ def _create_stations_map():
             if "station_name" in map_data.columns
             else map_data[["validations"]].sort_values("validations", ascending=False)
         )
-        column_mapping = {
-            "station_name": "Station",
-            "validations": "Nombre de validations"
-        }
+        column_mapping = {"station_name": "Station", "validations": "Nombre de validations"}
         display_data = display_data.rename(columns=column_mapping)
 
         st.dataframe(display_data, use_container_width=True, hide_index=True)
