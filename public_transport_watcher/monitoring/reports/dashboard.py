@@ -3,7 +3,6 @@ import time
 import altair as alt
 import plotly.express as px
 import streamlit as st
-import pandas as pd
 import numpy as np
 
 from public_transport_watcher.monitoring.template import get_safe_query_execution
@@ -134,7 +133,7 @@ def _create_hourly_heatmap():
 
 
 def _create_stations_map():
-    stations_data = _safe_query_execution("get_validations", "Fréquentation des stations du dernier mois")
+    stations_data = get_safe_query_execution("get_validations", "Fréquentation des stations du dernier mois")
 
     if stations_data is None or stations_data.empty:
         st.error("Aucune donnée géographique disponible pour les stations")
@@ -181,6 +180,12 @@ def _create_stations_map():
             if "station_name" in map_data.columns
             else map_data[["validations"]].sort_values("validations", ascending=False)
         )
+        column_mapping = {
+            "station_name": "Station",
+            "validations": "Nombre de validations"
+        }
+        display_data = display_data.rename(columns=column_mapping)
+
         st.dataframe(display_data, use_container_width=True, hide_index=True)
 
 
