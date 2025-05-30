@@ -11,6 +11,13 @@ MR #25
 ### Added
 - Added frequentation map on dashboard
 
+## [0.22.0] - 2025-05-28
+MR #24
+
+### Added
+- Dashboard API visualisations
+- Queries for the dashboard API
+
 ## [0.21.0] - 2025-05-28
 MR #23
 

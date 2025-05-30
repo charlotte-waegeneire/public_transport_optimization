@@ -6,6 +6,7 @@ import streamlit as st
 import pandas as pd
 import numpy as np
 
+from public_transport_watcher.monitoring.template import get_safe_query_execution
 from public_transport_watcher.utils import get_query_result
 
 # Constantes
@@ -27,26 +28,6 @@ FR_MONTHS = {
 DAYS_OF_WEEK = ["Lundi", "Mardi", "Mercredi", "Jeudi", "Vendredi", "Samedi", "Dimanche"]
 
 
-def _safe_query_execution(query_name, description="Requête"):
-    """Executes a query safely with loading indicator."""
-    try:
-        start_time = time.time()
-        loading_placeholder = st.empty()
-        loading_placeholder.caption(f"🔄 Chargement {description}...")
-
-        result = get_query_result(query_name)
-
-        end_time = time.time()
-        execution_time = end_time - start_time
-
-        loading_placeholder.caption(f"✅ {description} chargé en {execution_time:.2f}s")
-        return result
-
-    except Exception as e:
-        loading_placeholder.error(f"❌ Erreur: {str(e)}")
-        return None
-
-
 def _create_bar_chart(data, x_col, y_col, x_title, y_title):
     """Creates a standardized bar chart."""
     return (
@@ -65,14 +46,14 @@ def _display_top_charts():
 
     with col1:
         st.subheader("Top 10 lignes")
-        lines_traffic = _safe_query_execution("get_top_10_lines", "Top 10 lignes")
+        lines_traffic = get_safe_query_execution("get_top_10_lines", "Top 10 lignes")
         if lines_traffic is not None:
             chart = _create_bar_chart(lines_traffic, "line_name", "total_validations", "Ligne", "Nombre de validations")
             st.altair_chart(chart, use_container_width=True)
 
     with col2:
         st.subheader("Top 10 Stations")
-        stations_traffic = _safe_query_execution("get_top_10_stations", "Top 10 stations")
+        stations_traffic = get_safe_query_execution("get_top_10_stations", "Top 10 stations")
         if stations_traffic is not None:
             chart = _create_bar_chart(stations_traffic, "station_name", "count", "Station", "Nombre de validations")
             st.altair_chart(chart, use_container_width=True)
@@ -95,7 +76,7 @@ def _prepare_monthly_data(data):
 def _create_monthly_evolution_chart():
     """Creates the monthly validation evolution chart."""
 
-    validations_data = _safe_query_execution("get_validations_per_month_year", "Évolution mensuelle des validations")
+    validations_data = get_safe_query_execution("get_validations_per_month_year", "Évolution mensuelle des validations")
     if validations_data is None or validations_data.empty:
         st.error("Aucune donnée disponible")
         return
@@ -132,7 +113,7 @@ def _create_monthly_evolution_chart():
 
 def _create_hourly_heatmap():
     """Creates the hourly traffic frequency heatmap."""
-    hourly_traffic = _safe_query_execution("get_hourly_traffic_heatmap", "Fréquentation par créneau horaire")
+    hourly_traffic = get_safe_query_execution("get_hourly_traffic_heatmap", "Fréquentation par créneau horaire")
     if hourly_traffic is None:
         return
 
@@ -234,8 +215,7 @@ def _display_key_metrics():
 
 def dashboard():
     """Main dashboard function."""
-    st.title("Dashboard")
-
+    st.title("Utilisation des transports publics")
     st.header("📊 Vue d'ensemble")
     st.subheader("Métriques clés")
     _display_key_metrics()
