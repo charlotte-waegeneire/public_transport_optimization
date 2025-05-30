@@ -3,6 +3,7 @@ import time
 import altair as alt
 import plotly.express as px
 import streamlit as st
+import numpy as np
 
 from public_transport_watcher.monitoring.template import get_safe_query_execution
 from public_transport_watcher.utils import get_query_result
@@ -131,6 +132,60 @@ def _create_hourly_heatmap():
     st.plotly_chart(fig_heatmap, use_container_width=True)
 
 
+def _create_stations_map():
+    stations_data = get_safe_query_execution("get_validations", "Fréquentation des stations du dernier mois")
+
+    if stations_data is None or stations_data.empty:
+        st.error("Aucune donnée géographique disponible pour les stations")
+        return
+
+    required_columns = ["latitude", "longitude", "validations"]
+    if not all(col in stations_data.columns for col in required_columns):
+        st.error(f"Colonnes manquantes dans les données. Colonnes requises: {required_columns}")
+        st.write("Colonnes disponibles:", list(stations_data.columns))
+        return
+
+    map_data = stations_data.dropna(subset=["latitude", "longitude", "validations"]).copy()
+    map_data = map_data[map_data["validations"] > 0]
+
+    if map_data.empty:
+        st.info("Aucune station avec des coordonnées valides trouvée")
+        return
+
+    min_validations = map_data["validations"].min()
+    max_validations = map_data["validations"].max()
+
+    if max_validations > min_validations:
+        if min_validations > 0:
+            log_min = np.log(min_validations)
+            log_max = np.log(max_validations)
+            map_data["size"] = 20 + 200 * (np.log(map_data["validations"]) - log_min) / (log_max - log_min)
+        else:
+            range_validations = max_validations - min_validations
+            map_data["size"] = 20 + 200 * (map_data["validations"] - min_validations) / range_validations
+    else:
+        map_data["size"] = 100
+
+    map_data["size"] = np.clip(map_data["size"], 20, 220)
+
+    map_data = map_data.rename(columns={"latitude": "lat", "longitude": "lon"})
+
+    st.map(map_data, size="size", color="#FF6B6B")
+
+    st.caption("💡 La taille des points indique le niveau de fréquentation")
+
+    with st.expander("Voir les données détaillées"):
+        display_data = (
+            map_data[["station_name", "validations"]].sort_values("validations", ascending=False)
+            if "station_name" in map_data.columns
+            else map_data[["validations"]].sort_values("validations", ascending=False)
+        )
+        column_mapping = {"station_name": "Station", "validations": "Nombre de validations"}
+        display_data = display_data.rename(columns=column_mapping)
+
+        st.dataframe(display_data, use_container_width=True, hide_index=True)
+
+
 def _display_key_metrics():
     """Display key metrics."""
 
@@ -171,8 +226,12 @@ def dashboard():
     st.header("📈 Évolution mensuelle des validations")
     _create_monthly_evolution_chart()
 
-    st.header("🕐 Fréquentation par créneau horaire")
+    st.header("🕐 Fréquentation")
+    st.subheader("Fréquentation par créneau horaire")
     _create_hourly_heatmap()
+
+    st.subheader("Carte de fréquentation du dernier mois")
+    _create_stations_map()
 
 
 if __name__ == "__main__":
