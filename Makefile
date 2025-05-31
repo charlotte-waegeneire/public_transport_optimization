@@ -77,6 +77,9 @@ run-api:
 run-monitoring:
 	streamlit run public_transport_watcher/monitoring/app.py
 
+run-app:
+	streamlit run public_transport_watcher/application/app.py
+
 # Database operations
 db-init:
 	alembic init alembic

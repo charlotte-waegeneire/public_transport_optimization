@@ -20,8 +20,6 @@ make install-dev      # Development dependencies
 # Code quality
 make format           # Auto-format code with ruff
 make lint             # Run linting checks
-make test             # Run tests
-make test-coverage    # Run tests with coverage report
 make check            # Run lint + tests (quick validation)
 
 # Clean up
@@ -32,7 +30,9 @@ make clean            # Remove build artifacts and cache
 ```bash
 # Start services
 make run-api          # Start Flask API server (port 5001)
-make run-monitoring    # Start Streamlit monitoring
+make run-monitoring   # Start Streamlit monitoring
+make run-extractor    # Start the extracting process
+make run-app          # Start the user app
 
 # Docker services
 make docker-build     # Build Docker images
