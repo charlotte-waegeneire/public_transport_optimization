@@ -18,7 +18,6 @@ MR #25
 ### Added
 - Validations map visualisation
 
-
 ## [0.22.0] - 2025-05-28
 MR #24
 
