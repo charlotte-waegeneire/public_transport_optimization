@@ -32,9 +32,7 @@ make clean            # Remove build artifacts and cache
 ```bash
 # Start services
 make run-api          # Start Flask API server (port 5001)
-make run-dashboard    # Start Streamlit dashboard
-make run-scraper      # Run data scraper
-make run-scheduler    # Start scheduler
+make run-monitoring    # Start Streamlit monitoring
 
 # Docker services
 make docker-build     # Build Docker images

@@ -1,9 +1,7 @@
-import time
-
 import altair as alt
+import numpy as np
 import plotly.express as px
 import streamlit as st
-import numpy as np
 
 from public_transport_watcher.monitoring.template import get_safe_query_execution
 from public_transport_watcher.utils import get_query_result

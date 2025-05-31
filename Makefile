@@ -67,25 +67,15 @@ format:
 	ruff format .
 	ruff check --fix .
 
-# Testing
-test:
-	pytest
-
-test-coverage:
-	pytest --cov=public_transport_watcher --cov-report=html --cov-report=term
-
 # Application runners
+run-extractor:
+	python public_transport_watcher/extractor/extractor.py
+
 run-api:
-	python -m public_transport_watcher.api.app
+	python public_transport_watcher/api/app.py
 
-run-dashboard:
-	streamlit run public_transport_watcher/dashboard/app.py
-
-run-scraper:
-	python -m public_transport_watcher.scraper.main
-
-run-scheduler:
-	python -m public_transport_watcher.scheduler.main
+run-monitoring:
+	streamlit run public_transport_watcher/monitoring/app.py
 
 # Database operations
 db-init:
@@ -129,20 +119,6 @@ docker-down:
 
 logs:
 	docker-compose logs -f
-
-# Distribution
-build:
-	python -m build
-
-dist: clean
-	python -m build
-	@echo "Distribution packages created in dist/"
-
-upload-test: dist
-	python -m twine upload --repository testpypi dist/*
-
-upload-prod: dist
-	python -m twine upload dist/*
 
 # Development workflow shortcuts
 dev-setup: install-dev
