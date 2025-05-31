@@ -1,315 +1,119 @@
-from typing import Dict, List
+"""
+Main search interface for the public transport watcher.
+"""
+
+from typing import Tuple
 
 import requests
 import streamlit as st
-from streamlit_searchbox import st_searchbox
+from templates.address_search import render_address_search_section
+from templates.route_display import display_route_results
+from templates.search_state import (
+    has_coordinates,
+    has_search_results,
+    initialize_session_state,
+    update_address_selection,
+)
+from templates.ui_components import create_layout_columns, render_new_search_button, render_page_header
 
 from public_transport_watcher.utils import get_env_variable
 
 _APP_API_ENDPOINT = get_env_variable("APP_API_ENDPOINT")
 
 
-def search_addresses_api(query: str) -> List[Dict]:
-    if not query or len(query.strip()) < 3:
-        return []
-
+def fetch_optimal_routes(start_coords: Tuple[float, float], end_coords: Tuple[float, float]) -> Tuple[bool, str]:
     try:
-        response = requests.get(
-            f"{_APP_API_ENDPOINT}/api/v1/routes/search_address_coordinates",
-            params={"query": query.strip(), "limit": 10},
-            timeout=5,
+        response_base = requests.get(
+            f"{_APP_API_ENDPOINT}/api/v1/routes/optimal",
+            params={
+                "start_coords": str(start_coords),
+                "end_coords": str(end_coords),
+            },
+            timeout=10,
         )
 
-        if response.status_code == 200:
-            data = response.json()
-            addresses = data.get("addresses", [])
-            return addresses
+        # Fetch optimized route
+        response_weighted = requests.get(
+            f"{_APP_API_ENDPOINT}/api/v1/routes/optimal",
+            params={
+                "start_coords": str(start_coords),
+                "end_coords": str(end_coords),
+                "use_weighted": True,
+            },
+            timeout=10,
+        )
+
+        if response_base.status_code == 200 and response_weighted.status_code == 200:
+            st.session_state.route_data_base = response_base.json()
+            st.session_state.route_data_weighted = response_weighted.json()
+            return True, ""
         else:
-            return []
+            return False, "Failed to find the optimal route, try again later"
 
-    except Exception:
-        return []
-
-
-def get_route_summary_short(route_data: Dict) -> str:
-    graph_type = route_data.get("graph_type", "unknown")
-    route_info = route_data.get("route_info", {})
-    travel_time = route_info.get("travel_time_formatted", "N/A")
-    num_transfers = route_info.get("num_transfers", 0)
-
-    icon = "🚇" if graph_type == "base" else "⚡"
-    type_label = "Standard" if graph_type == "base" else "Optimized"
-
-    transfer_text = f"{num_transfers} transfer{'s' if num_transfers > 1 else ''}" if num_transfers > 0 else "direct"
-
-    return f"{icon} **{type_label}** - {travel_time} - {transfer_text}"
+    except Exception as e:
+        return False, f"Error: {str(e)}"
 
 
-def get_transport_summary(route_data: Dict) -> str:
-    route_info = route_data.get("route_info", {})
-    segments = route_info.get("segments", [])
+def handle_route_search(has_results: bool):
+    button_text = "🔄 Update journey" if has_results else "🔍 Find your optimal journey"
 
-    transport_names = []
-    for segment in segments:
-        if not segment.get("is_transfer", False):
-            transport_name = segment.get("transport_name", "")
-            if transport_name and transport_name not in transport_names:
-                transport_names.append(transport_name)
+    if st.button(button_text, type="primary", use_container_width=True):
+        with st.spinner("🔍 Finding the optimal route..."):
+            start_coords = st.session_state.start_coords
+            end_coords = st.session_state.end_coords
 
-    if not transport_names:
-        return "No transport"
+            success, error_message = fetch_optimal_routes(start_coords, end_coords)
 
-    return " → ".join(transport_names)
-
-
-def display_route_timeline(route_data: Dict):
-    route_info = route_data.get("route_info", {})
-    segments = route_info.get("segments", [])
-    station_names = route_info.get("station_names", [])
-
-    if not segments or not station_names:
-        st.error("No route information available")
-        return
-
-    walking_dist = route_data.get("walking_distance", 0)
-    walking_time = route_data.get("walking_duration", 0)
-
-    if walking_dist > 0:
-        walking_dist_formatted = f"{walking_dist:.0f}m" if walking_dist < 1000 else f"{walking_dist / 1000:.1f}km"
-        st.markdown(f"🚶 {walking_dist_formatted} walking ({walking_time:.0f} min)")
-        st.markdown("")
-
-    if walking_time > 0:
-        st.markdown("🚶 **Walk** to the first station")
-
-    transfer_segments = {}
-    for i, segment in enumerate(segments):
-        if segment.get("is_transfer", False):
-            station_index = i + 1
-            if station_index not in transfer_segments:
-                transfer_segments[station_index] = []
-            transfer_segments[station_index].append(segment.get("travel_time_mins", 0))
-
-    for i, station in enumerate(station_names):
-        station_icon = "🏁" if i == 0 else "🎯" if i == len(station_names) - 1 else "🚉"
-        station_label = "*(Departure)*" if i == 0 else "*(Arrival)*" if i == len(station_names) - 1 else ""
-
-        if i in transfer_segments:
-            transfer_times = transfer_segments[i]
-            total_transfer_time = sum(transfer_times)
-            station_icon = "🔄"
-            if station_label == "":
-                station_label = f"*(Transfer - {total_transfer_time:.0f} min)*"
+            if success:
+                st.rerun()
             else:
-                station_label = f"{station_label[:-1]} - Transfer - {total_transfer_time:.0f} min)*"
-
-        st.markdown(f"{station_icon} **{station}** {station_label}")
-
-        if i < len(segments):
-            segment = segments[i]
-            travel_time_seg = segment.get("travel_time_mins", 0)
-            is_transfer = segment.get("is_transfer", False)
-            transport_name = segment.get("transport_name", "")
-
-            if not is_transfer:
-                colors = ["#FF6B35", "#4ECDC4", "#45B7D1", "#96CEB4", "#FFEAA7", "#DDA0DD"]
-                color = colors[hash(str(transport_name)) % len(colors)]
-
-                st.markdown(
-                    f"""
-                &nbsp;&nbsp;&nbsp;&nbsp;
-                <span style="
-                    background-color: {color}; 
-                    color: white; 
-                    padding: 2px 8px; 
-                    border-radius: 10px; 
-                    font-size: 12px;
-                    font-weight: bold;
-                ">{transport_name}</span> 
-                <em>({travel_time_seg:.0f} min)</em>
-                """,
-                    unsafe_allow_html=True,
-                )
-
-    if walking_time > 0:
-        st.markdown("🚶 **Walk** from the last station")
-
-
-def display_route_info_collapsible(route_data: Dict, route_type: str):
-    route_summary = get_route_summary_short(route_data)
-    transport_summary = get_transport_summary(route_data)
-
-    # Create expander with route summary as title
-    with st.expander(f"{route_summary}", expanded=False):
-        st.markdown(f"**Transport:** {transport_summary}")
-        st.markdown("---")
-        display_route_timeline(route_data)
+                st.error(error_message)
+                if "Error:" not in error_message:
+                    st.info("🚧 The optimal route is coming soon!")
 
 
 def search():
-    # Initialize session state
-    if "start_coords" not in st.session_state:
-        st.session_state.start_coords = None
-    if "end_coords" not in st.session_state:
-        st.session_state.end_coords = None
-    if "addresses_cache" not in st.session_state:
-        st.session_state.addresses_cache = {}
-    if "route_data_base" not in st.session_state:
-        st.session_state.route_data_base = None
-    if "route_data_weighted" not in st.session_state:
-        st.session_state.route_data_weighted = None
-    if "selected_start_address" not in st.session_state:
-        st.session_state.selected_start_address = ""
-    if "selected_end_address" not in st.session_state:
-        st.session_state.selected_end_address = ""
-    if "search_reset_counter" not in st.session_state:
-        st.session_state.search_reset_counter = 0
+    initialize_session_state()
 
-    # Check if we have results to determine layout
-    has_results = st.session_state.route_data_base and st.session_state.route_data_weighted
+    has_results = has_search_results()
 
-    # Dynamic layout based on results
     if not has_results:
-        # Before search: smaller, centered inputs
-        _, center_col, _ = st.columns([1, 2, 1])
-        search_col = center_col
-
-        with search_col:
-            st.markdown("<div style='text-align: center; margin: 2rem 0;'>", unsafe_allow_html=True)
-            st.markdown("## 🚇 Find your optimal journey")
-            st.markdown("</div>", unsafe_allow_html=True)
+        render_page_header()
+        search_col, results_col = create_layout_columns(has_results)
     else:
-        # After search: wider layout with results
-        search_col, results_col = st.columns([2, 3], gap="large")
+        search_col, results_col = create_layout_columns(has_results)
 
-    # Search inputs section
     with search_col:
-        # Starting point section
-        st.markdown("#### 🏠 Your starting point")
+        render_search_interface(has_results)
 
-        # Show selected address if we have one
-        if st.session_state.selected_start_address and has_results:
-            st.info(f"📍 Selected: {st.session_state.selected_start_address}")
-
-        def search_start_addresses(query: str) -> List[str]:
-            addresses = search_addresses_api(query)
-            for addr in addresses:
-                st.session_state.addresses_cache[addr["address"]] = addr
-            return [addr["address"] for addr in addresses]
-
-        # Use a unique key that changes when we want to reset
-        search_key = f"start_search_{st.session_state.get('search_reset_counter', 0)}"
-        start_address = st_searchbox(
-            search_function=search_start_addresses,
-            placeholder="Type your starting point...",
-            label="",
-            key=search_key,
-            clear_on_submit=False,
-        )
-
-        # Handle address selection and update session state
-        if start_address:
-            if start_address in st.session_state.addresses_cache:
-                start_address_data = st.session_state.addresses_cache[start_address]
-                st.session_state.start_coords = (start_address_data["latitude"], start_address_data["longitude"])
-                st.session_state.selected_start_address = start_address
-            else:
-                # If address not in cache, clear coordinates but keep the input value
-                st.session_state.start_coords = None
-                st.session_state.selected_start_address = start_address
-
-        # Destination section
-        st.markdown("#### 🎯 Your destination")
-
-        # Show selected address if we have one
-        if st.session_state.selected_end_address and has_results:
-            st.info(f"📍 Selected: {st.session_state.selected_end_address}")
-
-        def search_end_addresses(query: str) -> List[str]:
-            addresses = search_addresses_api(query)
-            for addr in addresses:
-                st.session_state.addresses_cache[addr["address"]] = addr
-            return [addr["address"] for addr in addresses]
-
-        # Use a unique key that changes when we want to reset
-        search_key = f"end_search_{st.session_state.get('search_reset_counter', 0)}"
-        end_address = st_searchbox(
-            search_function=search_end_addresses,
-            placeholder="Type your destination...",
-            label="",
-            key=search_key,
-            clear_on_submit=False,
-        )
-
-        # Handle address selection and update session state
-        if end_address:
-            if end_address in st.session_state.addresses_cache:
-                end_address_data = st.session_state.addresses_cache[end_address]
-                st.session_state.end_coords = (end_address_data["latitude"], end_address_data["longitude"])
-                st.session_state.selected_end_address = end_address
-            else:
-                # If address not in cache, clear coordinates but keep the input value
-                st.session_state.end_coords = None
-                st.session_state.selected_end_address = end_address
-
-        # Search button
-        if st.session_state.start_coords and st.session_state.end_coords:
-            button_text = "🔄 Update journey" if has_results else "🔍 Find your optimal journey"
-
-            if st.button(button_text, type="primary", use_container_width=True):
-                with st.spinner("🔍 Finding the optimal route..."):
-                    try:
-                        response_base = requests.get(
-                            f"{_APP_API_ENDPOINT}/api/v1/routes/optimal",
-                            params={
-                                "start_coords": str(st.session_state.start_coords),
-                                "end_coords": str(st.session_state.end_coords),
-                            },
-                            timeout=10,
-                        )
-
-                        response_weighted = requests.get(
-                            f"{_APP_API_ENDPOINT}/api/v1/routes/optimal",
-                            params={
-                                "start_coords": str(st.session_state.start_coords),
-                                "end_coords": str(st.session_state.end_coords),
-                                "use_weighted": True,
-                            },
-                            timeout=10,
-                        )
-
-                        if response_base.status_code == 200 and response_weighted.status_code == 200:
-                            st.session_state.route_data_base = response_base.json()
-                            st.session_state.route_data_weighted = response_weighted.json()
-                            st.rerun()  # Refresh to show results
-                        else:
-                            st.error("Failed to find the optimal route, try again later")
-
-                    except Exception as e:
-                        st.error(f"Error: {str(e)}")
-                        st.info("🚧 The optimal route is coming soon!")
-
-    # Results section
-    if has_results:
+    if has_results and results_col:
         with results_col:
-            st.markdown("## 🎯 Your route options")
+            display_route_results()
+            render_new_search_button()
 
-            # Display routes in collapsible sections
-            st.markdown("### Standard Route")
-            display_route_info_collapsible(st.session_state.route_data_base, "standard")
 
-            st.markdown("### Optimized Route")
-            display_route_info_collapsible(st.session_state.route_data_weighted, "optimized")
+def render_search_interface(has_results: bool):
+    start_address = render_address_search_section(
+        title="Your starting point",
+        emoji="🏠",
+        address_type="start",
+        api_endpoint=_APP_API_ENDPOINT,
+        has_results=has_results,
+    )
 
-            # Clear results button
-            if st.button("🔄 New Search", use_container_width=True):
-                # Clear results and selected addresses for a fresh start
-                st.session_state.route_data_base = None
-                st.session_state.route_data_weighted = None
-                st.session_state.selected_start_address = ""
-                st.session_state.selected_end_address = ""
-                st.session_state.start_coords = None
-                st.session_state.end_coords = None
-                # Increment counter to force new search box keys
-                st.session_state.search_reset_counter += 1
-                st.rerun()
+    if start_address:
+        update_address_selection(start_address, "start")
+
+    end_address = render_address_search_section(
+        title="Your destination",
+        emoji="🎯",
+        address_type="end",
+        api_endpoint=_APP_API_ENDPOINT,
+        has_results=has_results,
+    )
+
+    if end_address:
+        update_address_selection(end_address, "end")
+
+    if has_coordinates():
+        handle_route_search(has_results)
