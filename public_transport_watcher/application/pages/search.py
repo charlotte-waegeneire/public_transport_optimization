@@ -1,7 +1,3 @@
-"""
-Main search interface for the public transport watcher.
-"""
-
 from typing import Tuple
 
 import requests
@@ -14,7 +10,7 @@ from templates.search_state import (
     initialize_session_state,
     update_address_selection,
 )
-from templates.ui_components import create_layout_columns, render_new_search_button, render_page_header
+from templates.ui_components import render_new_search_button, render_page_header
 
 from public_transport_watcher.utils import get_env_variable
 
@@ -32,7 +28,6 @@ def fetch_optimal_routes(start_coords: Tuple[float, float], end_coords: Tuple[fl
             timeout=10,
         )
 
-        # Fetch optimized route
         response_weighted = requests.get(
             f"{_APP_API_ENDPOINT}/api/v1/routes/optimal",
             params={
@@ -78,15 +73,17 @@ def search():
     has_results = has_search_results()
 
     if not has_results:
+        _, center_col, _ = st.columns([1, 2, 1])
         render_page_header()
-        search_col, results_col = create_layout_columns(has_results)
+
+        with center_col:
+            render_search_interface(has_results)
     else:
-        search_col, results_col = create_layout_columns(has_results)
+        search_col, results_col = st.columns([2, 3], gap="large")
 
-    with search_col:
-        render_search_interface(has_results)
+        with search_col:
+            render_search_interface(has_results)
 
-    if has_results and results_col:
         with results_col:
             display_route_results()
             render_new_search_button()

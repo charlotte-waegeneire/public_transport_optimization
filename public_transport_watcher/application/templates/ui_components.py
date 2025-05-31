@@ -6,7 +6,6 @@ def render_page_header():
     _, center_col, _ = st.columns([1, 2, 1])
     with center_col:
         st.markdown("<div style='text-align: center; margin: 2rem 0;'>", unsafe_allow_html=True)
-        st.markdown("## 🚇 Find your optimal journey")
         st.markdown("</div>", unsafe_allow_html=True)
 
 
