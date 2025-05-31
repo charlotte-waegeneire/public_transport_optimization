@@ -5,8 +5,8 @@ All notable changes to this project will be documented in this file.
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.1.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
-## [0.24.0] - 2025-05-31
-MR #26
+## [0.25.0] - 2025-05-31
+MR #28
 
 ### Added
 - Makefile for easier dev commands
@@ -15,6 +15,12 @@ MR #26
 
 ### Modified
 - Ruff formatted the missing files
+
+## [0.24.0] - 2025-05-30
+MR #26
+
+### Removed
+- Comparison between arrivals and starts graph
 
 ## [0.23.0] - 2025-05-30
 MR #25
