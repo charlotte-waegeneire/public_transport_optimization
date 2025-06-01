@@ -117,6 +117,10 @@ class GraphBuilder:
         return {
             "walking_distance": total_walking_distance,
             "walking_duration": total_walking_duration,
+            "walking_distance_start": walking_distance_start,
+            "walking_duration_start": walking_duration_start,
+            "walking_distance_end": walking_distance_end,
+            "walking_duration_end": walking_duration_end,
             "network_time": network_time,
             "total_time": total_time,
             "optimal_path": optimal_path,

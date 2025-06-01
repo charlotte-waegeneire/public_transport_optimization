@@ -1,8 +1,9 @@
 import streamlit as st
 
 from public_transport_watcher.monitoring.admin import create_new_user, login, show_users
-from public_transport_watcher.monitoring.api_use import journey_search, dashboard_api
+from public_transport_watcher.monitoring.api_use import dashboard_api, journey_search
 from public_transport_watcher.monitoring.reports import alerts, dashboard
+from public_transport_watcher.monitoring.data_quality import dashboard_data_quality
 
 if "logged_in" not in st.session_state:
     st.session_state.logged_in = False
@@ -18,11 +19,14 @@ dashboard_page = st.Page(dashboard, title="Utilisation des transports publics", 
 dashboard_api_page = st.Page(dashboard_api, title="Monitoring de l'API", icon=":material/dashboard:")
 journeys_page = st.Page(journey_search, title="Statistiques des recherches API", icon=":material/search:")
 
+dashboard_data_quality_page = st.Page(dashboard_data_quality, title="Qualité des données", icon=":material/dashboard:")
+
 if st.session_state.logged_in:
     pg = st.navigation(
         {
             "Transports publics": [dashboard_page, alerts_page],
             "Analyse de l'API": [dashboard_api_page, journeys_page],
+            "Analyse des données": [dashboard_data_quality_page],
             "Administration": [create_new_user_page, show_users_page],
         }
     )
