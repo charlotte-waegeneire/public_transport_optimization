@@ -227,7 +227,8 @@ def display_route_info_collapsible(route_data: Dict, route_type: str):
     with st.expander(f"{route_summary}", expanded=False):
         st.markdown(f"**Transport:** {transport_summary}")
         st.markdown("---")
-        route_map = create_route_map(_G, optimal_path, auto_zoom=True)
+        # Pass route_data to highlight transfer points
+        route_map = create_route_map(_G, optimal_path, route_data=route_data, auto_zoom=True)
         st.plotly_chart(route_map, use_container_width=True, key=f"route_map_{route_type}")
         display_route_timeline(route_data)
 
