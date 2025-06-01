@@ -148,5 +148,14 @@ if __name__ == "__main__":
     base_route = predictor.find_optimal_route(start_coords, end_coords, use_weighted=False)
     weighted_route = predictor.find_optimal_route(start_coords, end_coords, use_weighted=True)
 
-    predictor.schedule_hourly_updates()
-    predictor.run_scheduled_tasks()
+    # save both routes info to a json file each
+    import json
+
+    with open("base_route.json", "w") as f:
+        json.dump(base_route, f)
+
+    with open("weighted_route.json", "w") as f:
+        json.dump(weighted_route, f)
+
+    # predictor.schedule_hourly_updates()
+    # predictor.run_scheduled_tasks()

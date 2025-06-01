@@ -6,16 +6,14 @@ def adjust_station_weights(
     G: nx.DiGraph,
     frequency_data: pd.DataFrame,
     weight_factor: float = 0.1,
-    min_factor: float = 0.5,
-    max_factor: float = 1.5,
+    base_penalty: float = 5.0,
+    transfer_multiplier: float = 2.0,
 ) -> nx.DiGraph:
     """
     Adjust edge weights in the transport network based on station frequency data.
 
-    This function modifies the weights of edges connected to stations based on
-    their frequency of use (number of passengers). Stations with higher frequency
-    will have reduced weights (faster travel) while stations with lower frequency
-    might have increased weights (slower travel) to reflect congestion or service levels.
+    This function can either modify travel times (original behavior) or add
+    congestion penalties to avoid crowded stations, especially for transfers.
 
     Parameters
     ----------
@@ -25,15 +23,15 @@ def adjust_station_weights(
         DataFrame with 'station_id' and 'predictions' columns
     weight_factor : float, default=0.1
         Factor to control how much the frequency affects weights (higher means more impact)
-    min_factor : float, default=0.5
-        Minimum multiplier for weights (prevents weights from becoming too small)
-    max_factor : float, default=1.5
-        Maximum multiplier for weights (prevents weights from becoming too large)
+    base_penalty : float, default=5.0
+        Base penalty (in minutes) for crowded stations when using "penalties" mode
+    transfer_multiplier : float, default=2.0
+        Multiplier for penalties at transfer stations when using "penalties" mode
 
     Returns:
     --------
     networkx.DiGraph
-        The modified graph with adjusted weights
+        The modified graph with adjusted weights or congestion penalties
     """
     if isinstance(frequency_data, dict):
         frequency_df = pd.DataFrame(
@@ -61,39 +59,54 @@ def adjust_station_weights(
         if min_freq == max_freq:
             frequency_df["normalized"] = 0.5
         else:
-            frequency_df["normalized"] = 1 - (
-                (frequency_df["normalized_predictions"] - min_freq) / (max_freq - min_freq)
-            )
+            frequency_df["normalized"] = (frequency_df["normalized_predictions"] - min_freq) / (max_freq - min_freq)
 
     G_modified = G.copy()
 
+    # Add congestion penalties to stations as node attributes
+    crowd_lookup = dict(zip(frequency_df["station_id"], frequency_df["normalized"]))
+
+    # Identify transfer stations (connected to multiple lines)
+    transfer_stations = set()
+    for node in G_modified.nodes():
+        connected_lines = set()
+
+        # Check outgoing edges
+        for _, neighbor in G_modified.edges(node):
+            edge_data = G_modified[node][neighbor]
+            if "line" in edge_data:
+                connected_lines.add(edge_data["line"])
+
+        # Check incoming edges
+        for neighbor, _ in G_modified.in_edges(node):
+            edge_data = G_modified[neighbor][node]
+            if "line" in edge_data:
+                connected_lines.add(edge_data["line"])
+
+        if len(connected_lines) > 1:
+            transfer_stations.add(node)
+
+    # Add penalties to nodes
+    for node in G_modified.nodes():
+        crowd_level = crowd_lookup.get(node, 0.0)
+        penalty = base_penalty * crowd_level
+
+        # Apply transfer multiplier for transfer stations
+        if node in transfer_stations:
+            penalty *= transfer_multiplier
+
+        G_modified.nodes[node]["congestion_penalty"] = penalty
+        G_modified.nodes[node]["crowd_level"] = crowd_level
+        G_modified.nodes[node]["is_transfer"] = node in transfer_stations
+
+    # Modify edge weights to include destination station penalties
     for u, v, data in G_modified.edges(data=True):
         original_weight = data.get("weight", 1.0)
+        dest_penalty = G_modified.nodes[v].get("congestion_penalty", 0.0)
 
-        source_freq = frequency_df[frequency_df["station_id"] == u]["normalized"].values
-        target_freq = frequency_df[frequency_df["station_id"] == v]["normalized"].values
-
-        if len(source_freq) > 0 and len(target_freq) > 0:
-            avg_norm_freq = (source_freq[0] + target_freq[0]) / 2
-            adjusted_norm_freq = min_factor + (max_factor - min_factor) * avg_norm_freq
-
-            # Apply weight_factor to determine how much of the adjustment to use
-            # weight_factor = 0 means no adjustment (factor = 1.0)
-            # weight_factor = 1 means full adjustment
-            adjustment = 1.0 + (adjusted_norm_freq - 1.0) * weight_factor
-
-        elif len(source_freq) > 0:
-            adjusted_norm_freq = min_factor + (max_factor - min_factor) * source_freq[0]
-            adjustment = 1.0 + (adjusted_norm_freq - 1.0) * weight_factor
-
-        elif len(target_freq) > 0:
-            adjusted_norm_freq = min_factor + (max_factor - min_factor) * target_freq[0]
-            adjustment = 1.0 + (adjusted_norm_freq - 1.0) * weight_factor
-
-        else:
-            adjustment = 1.0
-
-        new_weight = original_weight * adjustment
+        # Apply weight_factor to control how much penalty to include
+        adjusted_penalty = dest_penalty * weight_factor
+        new_weight = original_weight + adjusted_penalty
 
         G_modified[u][v]["weight"] = new_weight
 

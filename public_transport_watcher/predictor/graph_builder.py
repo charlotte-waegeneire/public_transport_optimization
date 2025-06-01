@@ -99,7 +99,7 @@ class GraphBuilder:
         walking_duration_end = end_station["walking_duration"]
 
         optimal_path, network_time, route_info = find_optimal_route(
-            G, start_station["station_id"], end_station["station_id"]
+            G, start_station["station_id"], end_station["station_id"], weighted=use_weighted
         )
 
         if "segments" in route_info:
