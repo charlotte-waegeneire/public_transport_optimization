@@ -1,13 +1,12 @@
 from datetime import datetime, timedelta
 import os
 import time
-import pickle
-
 import pandas as pd
 import requests
 
 from public_transport_watcher.logging_config import get_logger
 from public_transport_watcher.utils import get_datalake_file
+from public_transport_watcher.utils.get_cache_utils import CacheManager
 
 logger = get_logger()
 
@@ -18,11 +17,11 @@ HEADERS = {"apikey": TRAFFIC_API_KEY, "Accept": "application/json"}
 
 DESIRED_TRANSPORT_MODES = ["rail", "metro", "tram"]
 
-CACHE_FILE = "traffic_cache.pkl"
-CACHE_DURATION_MINUTES = 5
+traffic_cache = CacheManager(cache_file="traffic_cache.pkl", duration_minutes=5)
 
 
 def _fetch_api_data(line_id: str) -> dict:
+    """Fetches API data for a specific line ID"""
     params = {"LineRef": line_id}
     try:
         response = requests.get(BASE_URL, headers=HEADERS, params=params)
@@ -43,6 +42,7 @@ def _fetch_api_data(line_id: str) -> dict:
 
 
 def _extract_traffic_data(data: dict) -> pd.DataFrame:
+    """Extracts traffic data from API response"""
     line_names, line_refs, statuses, destinations, arrival_times = [], [], [], [], []
 
     if data is None:
@@ -100,67 +100,19 @@ def _extract_lines_data() -> pd.DataFrame:
         return pd.DataFrame()
 
 
-def _is_cache_valid() -> bool:
-    """hecks if cache exists and is still valid"""
-    if not os.path.exists(CACHE_FILE):
-        return False
-
-    try:
-        with open(CACHE_FILE, 'rb') as f:
-            cached_data = pickle.load(f)
-
-        cache_time = cached_data['timestamp']
-        time_diff = datetime.now() - cache_time
-
-        return time_diff < timedelta(minutes=CACHE_DURATION_MINUTES)
-    except:
-        return False
-
-
-def _load_from_cache() -> pd.DataFrame:
-    """Loads data from cache"""
-    try:
-        with open(CACHE_FILE, 'rb') as f:
-            cached_data = pickle.load(f)
-
-        logger.info(f"Données chargées depuis le cache (créé à {cached_data['timestamp'].strftime('%H:%M:%S')})")
-        return cached_data['data']
-    except Exception as e:
-        logger.error(f"Erreur lors du chargement du cache: {e}")
-        return pd.DataFrame()
-
-
-def _save_to_cache(data: pd.DataFrame) -> None:
-    """Saves data to cache"""
-    try:
-        cache_data = {
-            'timestamp': datetime.now(),
-            'data': data
-        }
-
-        with open(CACHE_FILE, 'wb') as f:
-            pickle.dump(cache_data, f)
-
-        logger.info(f"Données sauvegardées en cache ({len(data)} enregistrements)")
-    except Exception as e:
-        logger.error(f"Erreur lors de la sauvegarde du cache: {e}")
-
-
 def _fetch_fresh_data() -> pd.DataFrame:
     """Retrieves fresh data from the API"""
     lines_df = _extract_lines_data()
     if lines_df.empty:
         return pd.DataFrame()
 
-    filtered_lines_df = lines_df[
-        lines_df["TransportMode"].isin(DESIRED_TRANSPORT_MODES)
-    ].copy()
+    filtered_lines_df = lines_df[lines_df["TransportMode"].isin(DESIRED_TRANSPORT_MODES)].copy()
 
     if "NetworkName" in filtered_lines_df.columns:
         filtered_lines_df = filtered_lines_df[
-            filtered_lines_df["NetworkName"].isna() |
-            ~filtered_lines_df["NetworkName"].str.contains("TER", case=False, na=False)
-            ]
+            filtered_lines_df["NetworkName"].isna()
+            | ~filtered_lines_df["NetworkName"].str.contains("TER", case=False, na=False)
+        ]
 
     line_ids = ["STIF:Line::" + line_id + ":" for line_id in filtered_lines_df["ID_Line"].tolist()]
 
@@ -210,17 +162,33 @@ def _fetch_fresh_data() -> pd.DataFrame:
     )
 
 
-def extract_traffic_data() -> pd.DataFrame:
+def extract_traffic_data(force_refresh=False) -> pd.DataFrame:
     """
     Main function that manages cache and retrieves traffic data
+
+    Args:
+        force_refresh: If True, ignores cache and forces refresh
+
+    Returns:
+        pd.DataFrame: DataFrame with traffic data
     """
-    if _is_cache_valid():
-        return _load_from_cache()
+    if not force_refresh and traffic_cache.is_cache_valid():
+        return traffic_cache.load_from_cache()
 
     logger.info("Cache expiré ou inexistant, récupération de nouvelles données...")
     fresh_data = _fetch_fresh_data()
 
     if not fresh_data.empty:
-        _save_to_cache(fresh_data)
+        traffic_cache.save_to_cache(fresh_data)
 
     return fresh_data
+
+
+def get_traffic_cache_info():
+    """Returns traffic cache information for UI display"""
+    return traffic_cache.get_cache_info()
+
+
+def clear_traffic_cache():
+    """Clears traffic cache"""
+    return traffic_cache.clear_cache()
