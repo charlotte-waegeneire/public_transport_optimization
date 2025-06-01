@@ -1,6 +1,5 @@
 import streamlit as st
 
-
 def display_metric_container(label, value, percentage=None):
     """Display metric in bordered container with traffic light colors for percentages."""
     
