@@ -3,15 +3,16 @@ from typing import Tuple
 import requests
 import streamlit as st
 
-from public_transport_watcher.application.components.address_search import render_address_search_section
-from public_transport_watcher.application.components.route_display import display_route_results
-from public_transport_watcher.application.components.search_state import (
+from public_transport_watcher.application.components import (
+    display_route_results,
     has_coordinates,
     has_search_results,
     initialize_session_state,
+    render_address_search_section,
+    render_new_search_button,
+    render_page_header,
     update_address_selection,
 )
-from public_transport_watcher.application.components.ui_components import render_new_search_button, render_page_header
 from public_transport_watcher.utils import get_env_variable
 
 _APP_API_ENDPOINT = get_env_variable("APP_API_ENDPOINT")

@@ -2,6 +2,12 @@ from typing import Dict, List
 
 import streamlit as st
 
+from public_transport_watcher.application.components.route_map import create_route_map
+from public_transport_watcher.predictor.graph_builder import GraphBuilder
+
+_GRAPH_BUILDER = GraphBuilder()
+_G = _GRAPH_BUILDER.load_graph("base")
+
 
 def get_route_summary_short(route_data: Dict) -> str:
     """Generate a short summary of the route."""
@@ -135,7 +141,7 @@ def display_route_timeline(route_data: Dict):
     display_walking_info(route_data)
 
     station_transfers = {}
-    for i, segment in enumerate(segments):
+    for _, segment in enumerate(segments):
         if segment.get("is_transfer", False):
             from_station_id = segment.get("from_station_id")
             transfer_time = segment.get("travel_time_mins", 0)
@@ -216,10 +222,13 @@ def display_route_info_collapsible(route_data: Dict, route_type: str):
     """Display route information in a collapsible expander."""
     route_summary = get_route_summary_short(route_data)
     transport_summary = get_transport_summary(route_data)
+    optimal_path = route_data.get("optimal_path", [])
 
     with st.expander(f"{route_summary}", expanded=False):
         st.markdown(f"**Transport:** {transport_summary}")
         st.markdown("---")
+        route_map = create_route_map(_G, optimal_path, auto_zoom=True)
+        st.plotly_chart(route_map, use_container_width=True, key=f"route_map_{route_type}")
         display_route_timeline(route_data)
 
 
@@ -228,7 +237,7 @@ def display_route_results():
     st.markdown("## 🎯 Vos options de trajet")
 
     st.markdown("### Trajet standard")
-    display_route_info_collapsible(st.session_state.route_data_base, "standard")
+    display_route_info_collapsible(st.session_state.route_data_base, "base")
 
     st.markdown("### Avez-vous quelques minutes de plus ? 🕒")
-    display_route_info_collapsible(st.session_state.route_data_weighted, "optimized")
+    display_route_info_collapsible(st.session_state.route_data_weighted, "weighted")

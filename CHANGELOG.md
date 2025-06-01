@@ -12,10 +12,11 @@ MR #28
 - Makefile for easier dev commands
 - Makefile main instructions in the README
 - Seeds for API logs by calling the API
+- Map to the path infos
 
 ### Modified
 - Ruff formatted the missing files
-- Route info display for a lighter UI
+- Route info display in a dropdown for a lighter UI
 - JSON returning the path info's to include transfer time
 - French instead of english UI
 
