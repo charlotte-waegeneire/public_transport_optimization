@@ -5,12 +5,26 @@ All notable changes to this project will be documented in this file.
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.1.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## [0.25.0] - 2025-05-31
+MR #28
+
+### Added
+- Makefile for easier dev commands
+- Makefile main instructions in the README
+- Seeds for API logs by calling the API
+- Map to the path infos
+
+### Modified
+- Ruff formatted the missing files
+- Route info display in a dropdown for a lighter UI
+- JSON returning the path info's to include transfer time
+- French instead of english UI
+
 ## [0.24.0] - 2025-05-30
 MR #26
 
 ### Removed
 - Comparison between arrivals and starts graph
-
 
 ## [0.23.0] - 2025-05-30
 MR #25
