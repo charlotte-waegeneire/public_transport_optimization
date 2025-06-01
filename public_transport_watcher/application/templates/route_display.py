@@ -38,16 +38,16 @@ def get_transport_summary(route_data: Dict) -> str:
 
 def display_walking_info(route_data: Dict):
     """Display walking distance and time information."""
-    walking_dist = route_data.get("walking_distance", 0)
-    walking_time = route_data.get("walking_duration", 0)
+    walking_dist_start = route_data.get("walking_distance_start", 0)
+    walking_time_start = route_data.get("walking_duration_start", 0)
 
-    if walking_dist > 0:
-        walking_dist_formatted = f"{walking_dist:.0f}m" if walking_dist < 1000 else f"{walking_dist / 1000:.1f}km"
-        st.markdown(f"🚶 {walking_dist_formatted} walking ({walking_time:.0f} min)")
-        st.markdown("")
-
-    if walking_time > 0:
-        st.markdown("🚶 **Walk** to the first station")
+    if walking_dist_start > 0 or walking_time_start > 0:
+        walking_dist_formatted = (
+            f"{walking_dist_start:.0f}m" if walking_dist_start < 1000 else f"{walking_dist_start / 1000:.1f}km"
+        )
+        st.markdown(
+            f"🚶 **Marcher** {walking_dist_formatted} jusqu'à la première station ({walking_time_start:.0f} min)"
+        )
 
 
 def get_transfer_segments(segments: List[Dict]) -> Dict[int, List[float]]:
@@ -62,25 +62,31 @@ def get_transfer_segments(segments: List[Dict]) -> Dict[int, List[float]]:
     return transfer_segments
 
 
-def display_station(station: str, index: int, total_stations: int, transfer_segments: Dict[int, List[float]]):
-    """Display a single station with appropriate icon and labels."""
-    station_icon = "🏁" if index == 0 else "🎯" if index == total_stations - 1 else "🚉"
-    station_label = "*(Departure)*" if index == 0 else "*(Arrival)*" if index == total_stations - 1 else ""
+def display_station(station: str, index: int, total_stations: int, segments: List[Dict]):
+    """Display a single station with appropriate icon, labels, and transfer time."""
+    if index == 0:
+        station_icon = "🏁"
+        station_label = "*(Départ)*"
+    elif index == total_stations - 1:
+        station_icon = "🎯"
+        station_label = "*(Arrivée)*"
+    else:
+        station_icon = "🚉"
+        station_label = ""
 
-    if index in transfer_segments:
-        transfer_times = transfer_segments[index]
-        total_transfer_time = sum(transfer_times)
+    transfer_time = get_transfer_time_for_station(segments, index)
+    if transfer_time > 0:
         station_icon = "🔄"
-        if station_label == "":
-            station_label = f"*(Transfer - {total_transfer_time:.0f} min)*"
+        if station_label:
+            station_label = f"{station_label[:-1]} - Correspondance - {transfer_time:.0f} min)*"
         else:
-            station_label = f"{station_label[:-1]} - Transfer - {total_transfer_time:.0f} min)*"
+            station_label = f"*(Correspondance - {transfer_time:.0f} min)*"
 
     st.markdown(f"{station_icon} **{station}** {station_label}")
 
 
 def display_transport_segment(segment: Dict):
-    """Display a transport segment with colored badge."""
+    """Display a transport segment with colored badge - only for actual transport, not transfers."""
     travel_time_seg = segment.get("travel_time_mins", 0)
     is_transfer = segment.get("is_transfer", False)
     transport_name = segment.get("transport_name", "")
@@ -106,6 +112,16 @@ def display_transport_segment(segment: Dict):
         )
 
 
+def get_transfer_time_for_station(segments: List[Dict], station_index: int) -> float:
+    """Get the total transfer time for a specific station."""
+    transfer_time = 0
+    if station_index < len(segments):
+        segment = segments[station_index]
+        if segment.get("is_transfer", False):
+            transfer_time += segment.get("travel_time_mins", 0)
+    return transfer_time
+
+
 def display_route_timeline(route_data: Dict):
     """Display the complete route timeline with stations and segments."""
     route_info = route_data.get("route_info", {})
@@ -113,22 +129,87 @@ def display_route_timeline(route_data: Dict):
     station_names = route_info.get("station_names", [])
 
     if not segments or not station_names:
-        st.error("No route information available")
+        st.error("Aucune information de trajet disponible")
         return
 
     display_walking_info(route_data)
 
-    transfer_segments = get_transfer_segments(segments)
+    station_transfers = {}
+    for i, segment in enumerate(segments):
+        if segment.get("is_transfer", False):
+            from_station_id = segment.get("from_station_id")
+            transfer_time = segment.get("travel_time_mins", 0)
+            if from_station_id not in station_transfers:
+                station_transfers[from_station_id] = 0
+            station_transfers[from_station_id] += transfer_time
 
-    for i, station in enumerate(station_names):
-        display_station(station, i, len(station_names), transfer_segments)
+    segment_index = 0
 
-        if i < len(segments):
-            display_transport_segment(segments[i])
+    for station_index, station in enumerate(station_names):
+        display_station_with_transfers(station, station_index, len(station_names), station_transfers, route_info)
 
-    walking_time = route_data.get("walking_duration", 0)
-    if walking_time > 0:
-        st.markdown("🚶 **Walk** from the last station")
+        while segment_index < len(segments):
+            segment = segments[segment_index]
+
+            if segment.get("is_transfer", False):
+                segment_index += 1
+                continue
+
+            from_station_name = segment.get("from_station_name", "")
+            if from_station_name == station or station_index < len(station_names) - 1:
+                display_transport_segment(segment)
+                segment_index += 1
+                break
+            else:
+                break
+
+    walking_dist_end = route_data.get("walking_distance_end", 0)
+    walking_time_end = route_data.get("walking_duration_end", 0)
+
+    if walking_dist_end > 0 or walking_time_end > 0:
+        walking_dist_formatted = (
+            f"{walking_dist_end:.0f}m" if walking_dist_end < 1000 else f"{walking_dist_end / 1000:.1f}km"
+        )
+        st.markdown(
+            f"🚶 **Marcher** {walking_dist_formatted} de la dernière station à la destination ({walking_time_end:.0f} min)"
+        )
+
+
+def display_station_with_transfers(
+    station: str, index: int, total_stations: int, station_transfers: Dict, route_info: Dict
+):
+    """Display a single station with appropriate icon, labels, and transfer time."""
+    segments = route_info.get("segments", [])
+
+    station_id = None
+    for segment in segments:
+        if segment.get("from_station_name") == station:
+            station_id = segment.get("from_station_id")
+            break
+        elif segment.get("to_station_name") == station:
+            station_id = segment.get("to_station_id")
+            break
+
+    if index == 0:
+        station_icon = "🏁"
+        station_label = "*(Départ)*"
+    elif index == total_stations - 1:
+        station_icon = "🎯"
+        station_label = "*(Arrivée)*"
+    else:
+        station_icon = "🚉"
+        station_label = ""
+
+    transfer_time = station_transfers.get(station_id, 0) if station_id else 0
+
+    if transfer_time > 0:
+        station_icon = "🔄"
+        if station_label:
+            station_label = f"{station_label[:-1]} - Correspondance - {transfer_time:.0f} min)*"
+        else:
+            station_label = f"*(Correspondance - {transfer_time:.0f} min)*"
+
+    st.markdown(f"{station_icon} **{station}** {station_label}")
 
 
 def display_route_info_collapsible(route_data: Dict, route_type: str):
@@ -144,10 +225,10 @@ def display_route_info_collapsible(route_data: Dict, route_type: str):
 
 def display_route_results():
     """Display both standard and optimized route results."""
-    st.markdown("## 🎯 Your route options")
+    st.markdown("## 🎯 Vos options de trajet")
 
-    st.markdown("### Standard Route")
+    st.markdown("### Trajet standard")
     display_route_info_collapsible(st.session_state.route_data_base, "standard")
 
-    st.markdown("### Optimized Route")
+    st.markdown("### Avez-vous quelques minutes de plus ? 🕒")
     display_route_info_collapsible(st.session_state.route_data_weighted, "optimized")

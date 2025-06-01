@@ -15,6 +15,9 @@ MR #28
 
 ### Modified
 - Ruff formatted the missing files
+- Route info display for a lighter UI
+- JSON returning the path info's to include transfer time
+- French instead of english UI
 
 ## [0.24.0] - 2025-05-30
 MR #26

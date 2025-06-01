@@ -13,7 +13,7 @@ def render_new_search_button():
     """Render the new search button and handle its click."""
     from .search_state import reset_search_state
 
-    if st.button("🔄 New Search", use_container_width=True):
+    if st.button("🔄 Nouvelle recherche", use_container_width=True):
         reset_search_state()
         st.rerun()
 

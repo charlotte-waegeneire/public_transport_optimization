@@ -54,7 +54,7 @@ def create_address_searchbox(search_function, placeholder: str, key: str):
 def display_selected_address(address: str):
     """Display the currently selected address."""
     if address:
-        st.info(f"📍 Selected: {address}")
+        st.info(f"📍 Sélectionné: {address}")
 
 
 def render_address_search_section(title: str, emoji: str, address_type: str, api_endpoint: str, has_results: bool):
@@ -68,6 +68,6 @@ def render_address_search_section(title: str, emoji: str, address_type: str, api
     search_function = create_search_function(api_endpoint)
 
     search_key = f"{address_type}_search_{st.session_state.get('search_reset_counter', 0)}"
-    placeholder = f"Type your {title.lower()}..."
+    placeholder = f"Tapez votre {title.lower()}..."
 
     return create_address_searchbox(search_function, placeholder, search_key)

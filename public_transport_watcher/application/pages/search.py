@@ -50,10 +50,10 @@ def fetch_optimal_routes(start_coords: Tuple[float, float], end_coords: Tuple[fl
 
 
 def handle_route_search(has_results: bool):
-    button_text = "🔄 Update journey" if has_results else "🔍 Find your optimal journey"
+    button_text = "🔄 Mettre à jour le trajet" if has_results else "🔍 Trouver votre trajet optimal"
 
     if st.button(button_text, type="primary", use_container_width=True):
-        with st.spinner("🔍 Finding the optimal route..."):
+        with st.spinner("🔍 Recherche du trajet optimal..."):
             start_coords = st.session_state.start_coords
             end_coords = st.session_state.end_coords
 
@@ -64,7 +64,7 @@ def handle_route_search(has_results: bool):
             else:
                 st.error(error_message)
                 if "Error:" not in error_message:
-                    st.info("🚧 The optimal route is coming soon!")
+                    st.info("🚧 Le trajet optimal est en cours de développement!")
 
 
 def search():
@@ -91,7 +91,7 @@ def search():
 
 def render_search_interface(has_results: bool):
     start_address = render_address_search_section(
-        title="Your starting point",
+        title="Votre point de départ",
         emoji="🏠",
         address_type="start",
         api_endpoint=_APP_API_ENDPOINT,
@@ -102,7 +102,7 @@ def render_search_interface(has_results: bool):
         update_address_selection(start_address, "start")
 
     end_address = render_address_search_section(
-        title="Your destination",
+        title="Votre destination",
         emoji="🎯",
         address_type="end",
         api_endpoint=_APP_API_ENDPOINT,
