@@ -128,6 +128,8 @@ venv.bak/
 sandbox
 logs
 postgresql-42.7.5.jar
+traffic_cache.pkl
+api_alerts_cache.pkl
 # Spyder project settings
 .spyderproject
 .spyproject

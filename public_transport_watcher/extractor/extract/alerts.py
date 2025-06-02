@@ -11,7 +11,7 @@ API_KEY = os.getenv("TRAFFIC_API_KEY")
 HEADERS = {"apikey": API_KEY, "Accept": "application/json"}
 
 
-def get_transport_mode_label(mode):
+def _get_transport_mode_label(mode):
     """Converts technical mode to French label"""
     mode_mapping = {"LocalTrain": "Transilien", "RapidTransit": "RER", "Metro": "Métro", "Tramway": "Tramway"}
     return mode_mapping.get(mode, mode)
@@ -19,29 +19,26 @@ def get_transport_mode_label(mode):
 
 def _get_api_data():
     """Retrieves all data from API"""
-    logger.info("🚀 Récupération des données api...")
+    logger.info("🚀 Fetching API data...")
 
     if not API_KEY:
-        logger.error("TRAFFIC_API_KEY non définie")
+        logger.error("TRAFFIC_API_KEY not defined")
         return None
 
     try:
         response = requests.get(API_URL, headers=HEADERS, timeout=30)
+        response.raise_for_status()
 
-        if response.status_code == 200:
-            data = response.json()
-            logger.info("✅ Données récupérées")
-            return data
-        else:
-            logger.error(f"Erreur API: {response.status_code} - {response.text}")
-            return None
+        data = response.json()
+        logger.info("✅ Data retrieved successfully")
+        return data
 
     except Exception as e:
-        logger.error(f"Erreur récupération : {e}")
+        logger.error(f"Retrieval error: {e}")
         return None
 
 
-def process_api_data(data):
+def _process_api_data(data):
     """Processes API data to create final DataFrame (excluding bus/funicular, grouped by line)"""
     if not data:
         return pd.DataFrame()
@@ -49,7 +46,7 @@ def process_api_data(data):
     disruptions = data.get("disruptions", [])
     lines = data.get("lines", [])
 
-    logger.info(f"Trouvé {len(disruptions)} perturbations et {len(lines)} lignes")
+    logger.info(f"Found {len(disruptions)} disruptions and {len(lines)} lines")
 
     filtered_lines = []
     excluded_count = 0
@@ -61,18 +58,17 @@ def process_api_data(data):
             continue
         filtered_lines.append(line)
 
-    logger.info(f"Lignes bus/funiculaire exclues: {excluded_count}")
-    logger.info(f"Après filtrage: {len(filtered_lines)} lignes")
+    logger.info(f"Bus/funicular lines excluded: {excluded_count}")
+    logger.info(f"After filtering: {len(filtered_lines)} lines")
 
     disruptions_dict = {d["id"]: d for d in disruptions}
     lines_data = {}
 
     for line in filtered_lines:
-        line_name = line.get("name", "")
         short_name = line.get("shortName", "")
         mode = line.get("mode", "")
 
-        mode_label = get_transport_mode_label(mode)
+        mode_label = _get_transport_mode_label(mode)
         line_key = f"{mode}_{short_name}"
         impacted_objects = line.get("impactedObjects", [])
 
@@ -136,14 +132,14 @@ def process_api_data(data):
     results = list(lines_data.values())
     df = pd.DataFrame(results)
 
-    logger.info(f"✅ DataFrame final créé avec {len(df)} enregistrements")
+    logger.info(f"✅ Final DataFrame created with {len(df)} records")
 
     if not df.empty:
         modes_present = df["mode"].unique()
-        logger.info(f"Modes présents: {list(modes_present)}")
+        logger.info(f"Modes present: {list(modes_present)}")
 
         disrupted_lines = len(df[df["short_message"].str.len() > 0])
-        logger.info(f"Lignes avec perturbations: {disrupted_lines}")
+        logger.info(f"Lines with disruptions: {disrupted_lines}")
 
     return df
 
@@ -161,15 +157,15 @@ def extract_alerts_data(force_refresh=False):
     if not force_refresh and is_cache_valid():
         return load_from_cache()
 
-    logger.info("Cache expiré ou refresh forcé, récupération nouvelles données...")
+    logger.info("Cache expired or refresh forced, fetching new data...")
 
     api_data = _get_api_data()
 
     if not api_data:
-        logger.error("Impossible de récupérer les données api")
+        logger.error("Unable to retrieve API data")
         return pd.DataFrame()
 
-    df = process_api_data(api_data)
+    df = _process_api_data(api_data)
 
     if not df.empty:
         save_to_cache(df)
