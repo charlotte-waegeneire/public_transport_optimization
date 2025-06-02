@@ -1,4 +1,4 @@
-from datetime import datetime, timedelta
+from datetime import datetime
 import os
 import time
 import pandas as pd
@@ -51,17 +51,17 @@ def _extract_traffic_data(data: dict) -> pd.DataFrame:
     for delivery in data.get("Siri", {}).get("ServiceDelivery", {}).get("EstimatedTimetableDelivery", []):
         for journey in delivery.get("EstimatedJourneyVersionFrame", []):
             for vehicle in journey.get("EstimatedVehicleJourney", []):
-                line_ref = vehicle.get("LineRef", {}).get("value", "Inconnu")
-                line_name = vehicle.get("PublishedLineName", [{}])[0].get("value", "Inconnu")
+                line_ref = vehicle.get("LineRef", {}).get("value", "Unknown")
+                line_name = vehicle.get("PublishedLineName", [{}])[0].get("value", "Unknown")
 
                 for call in vehicle.get("EstimatedCalls", {}).get("EstimatedCall", []):
-                    arrival_status = call.get("ArrivalStatus", "Inconnu")
+                    arrival_status = call.get("ArrivalStatus", "Unknown")
                     destination_display = call.get("DestinationDisplay", [])
-                    station_name = destination_display[0].get("value", "Inconnu") if destination_display else "Inconnu"
+                    station_name = destination_display[0].get("value", "Unknown") if destination_display else "Unknown"
 
-                    expected_arrival_time = call.get("ExpectedArrivalTime", "Inconnu")
+                    expected_arrival_time = call.get("ExpectedArrivalTime", "Unknown")
 
-                    if expected_arrival_time != "Inconnu":
+                    if expected_arrival_time != "Unknown":
                         try:
                             dt = datetime.fromisoformat(expected_arrival_time.replace("Z", "+00:00"))
                             expected_arrival_time = dt.strftime("%H:%M")
@@ -96,7 +96,7 @@ def _extract_lines_data() -> pd.DataFrame:
         file_path = next(f for f in get_datalake_file("schedule", 2025, "") if "referentiel-des-lignes.csv" in f)
         return pd.read_csv(file_path, sep=";")
     except (StopIteration, FileNotFoundError) as e:
-        logger.error(f"Failed to load row data : {e}")
+        logger.error(f"Failed to load lines data: {e}")
         return pd.DataFrame()
 
 
@@ -175,7 +175,7 @@ def extract_traffic_data(force_refresh=False) -> pd.DataFrame:
     if not force_refresh and traffic_cache.is_cache_valid():
         return traffic_cache.load_from_cache()
 
-    logger.info("Cache expiré ou inexistant, récupération de nouvelles données...")
+    logger.info("Cache expired or missing, fetching new data...")
     fresh_data = _fetch_fresh_data()
 
     if not fresh_data.empty:
