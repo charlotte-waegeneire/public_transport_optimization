@@ -1,11 +1,12 @@
 from datetime import datetime
 import os
-
+import time
 import pandas as pd
 import requests
 
 from public_transport_watcher.logging_config import get_logger
 from public_transport_watcher.utils import get_datalake_file
+from public_transport_watcher.utils.get_cache_utils import CacheManager
 
 logger = get_logger()
 
@@ -14,11 +15,13 @@ TRAFFIC_API_KEY = os.getenv("TRAFFIC_API_KEY")
 
 HEADERS = {"apikey": TRAFFIC_API_KEY, "Accept": "application/json"}
 
+DESIRED_TRANSPORT_MODES = ["rail", "metro", "tram"]
+
+traffic_cache = CacheManager(cache_file="traffic_cache.pkl", duration_minutes=5)
+
 
 def _fetch_api_data(line_id: str) -> dict:
-    """
-    Fetches data from the API for a given line ID.
-    """
+    """Fetches API data for a specific line ID"""
     params = {"LineRef": line_id}
     try:
         response = requests.get(BASE_URL, headers=HEADERS, params=params)
@@ -39,9 +42,7 @@ def _fetch_api_data(line_id: str) -> dict:
 
 
 def _extract_traffic_data(data: dict) -> pd.DataFrame:
-    """
-    Processes API data for a single line into a DataFrame and cleans the line_ref.
-    """
+    """Extracts traffic data from API response"""
     line_names, line_refs, statuses, destinations, arrival_times = [], [], [], [], []
 
     if data is None:
@@ -50,17 +51,17 @@ def _extract_traffic_data(data: dict) -> pd.DataFrame:
     for delivery in data.get("Siri", {}).get("ServiceDelivery", {}).get("EstimatedTimetableDelivery", []):
         for journey in delivery.get("EstimatedJourneyVersionFrame", []):
             for vehicle in journey.get("EstimatedVehicleJourney", []):
-                line_ref = vehicle.get("LineRef", {}).get("value", "Inconnu")
-                line_name = vehicle.get("PublishedLineName", [{}])[0].get("value", "Inconnu")
+                line_ref = vehicle.get("LineRef", {}).get("value", "Unknown")
+                line_name = vehicle.get("PublishedLineName", [{}])[0].get("value", "Unknown")
 
                 for call in vehicle.get("EstimatedCalls", {}).get("EstimatedCall", []):
-                    arrival_status = call.get("ArrivalStatus", "Inconnu")
+                    arrival_status = call.get("ArrivalStatus", "Unknown")
                     destination_display = call.get("DestinationDisplay", [])
-                    station_name = destination_display[0].get("value", "Inconnu") if destination_display else "Inconnu"
+                    station_name = destination_display[0].get("value", "Unknown") if destination_display else "Unknown"
 
-                    expected_arrival_time = call.get("ExpectedArrivalTime", "Inconnu")
+                    expected_arrival_time = call.get("ExpectedArrivalTime", "Unknown")
 
-                    if expected_arrival_time != "Inconnu":
+                    if expected_arrival_time != "Unknown":
                         try:
                             dt = datetime.fromisoformat(expected_arrival_time.replace("Z", "+00:00"))
                             expected_arrival_time = dt.strftime("%H:%M")
@@ -90,43 +91,55 @@ def _extract_traffic_data(data: dict) -> pd.DataFrame:
 
 
 def _extract_lines_data() -> pd.DataFrame:
-    """
-    Loads lines data from the CSV file.
-    """
+    """Extracts lines data from the referential CSV file"""
     try:
         file_path = next(f for f in get_datalake_file("schedule", 2025, "") if "referentiel-des-lignes.csv" in f)
         return pd.read_csv(file_path, sep=";")
     except (StopIteration, FileNotFoundError) as e:
-        logger.error(f"Failed to load row data : {e}")
+        logger.error(f"Failed to load lines data: {e}")
         return pd.DataFrame()
 
 
-def extract_traffic_data() -> pd.DataFrame:
-    """
-    Processes traffic data for rail lines and merges with lines data.
-    """
+def _fetch_fresh_data() -> pd.DataFrame:
+    """Retrieves fresh data from the API"""
     lines_df = _extract_lines_data()
     if lines_df.empty:
         return pd.DataFrame()
 
-    rail_lines_df = lines_df[lines_df["TransportMode"] == "rail"]
-    rail_line_ids = ["STIF:Line::" + line_id + ":" for line_id in rail_lines_df["ID_Line"].tolist()]
+    filtered_lines_df = lines_df[lines_df["TransportMode"].isin(DESIRED_TRANSPORT_MODES)].copy()
 
-    all_line_data = [
-        _extract_traffic_data(_fetch_api_data(line_id)) for line_id in rail_line_ids if _fetch_api_data(line_id)
-    ]
+    if "NetworkName" in filtered_lines_df.columns:
+        filtered_lines_df = filtered_lines_df[
+            filtered_lines_df["NetworkName"].isna()
+            | ~filtered_lines_df["NetworkName"].str.contains("TER", case=False, na=False)
+        ]
+
+    line_ids = ["STIF:Line::" + line_id + ":" for line_id in filtered_lines_df["ID_Line"].tolist()]
+
+    all_line_data = []
+    for i, line_id in enumerate(line_ids):
+        if i > 0 and i % 5 == 0:
+            time.sleep(1)
+
+        api_data = _fetch_api_data(line_id)
+        if api_data:
+            traffic_data = _extract_traffic_data(api_data)
+            if not traffic_data.empty:
+                all_line_data.append(traffic_data)
+
     traffic_df = pd.concat(all_line_data, ignore_index=True) if all_line_data else pd.DataFrame()
 
     if traffic_df.empty:
         return pd.DataFrame()
 
     traffic_df = traffic_df.merge(
-        rail_lines_df,
+        filtered_lines_df,
         left_on="line_ref",
         right_on="ID_Line",
         how="left",
         suffixes=("_df", "_lines"),
     )
+
     return traffic_df[
         [
             "line_name",
@@ -147,3 +160,35 @@ def extract_traffic_data() -> pd.DataFrame:
             "ShortName_GroupOfLines": "full_line_name",
         }
     )
+
+
+def extract_traffic_data(force_refresh=False) -> pd.DataFrame:
+    """
+    Main function that manages cache and retrieves traffic data
+
+    Args:
+        force_refresh: If True, ignores cache and forces refresh
+
+    Returns:
+        pd.DataFrame: DataFrame with traffic data
+    """
+    if not force_refresh and traffic_cache.is_cache_valid():
+        return traffic_cache.load_from_cache()
+
+    logger.info("Cache expired or missing, fetching new data...")
+    fresh_data = _fetch_fresh_data()
+
+    if not fresh_data.empty:
+        traffic_cache.save_to_cache(fresh_data)
+
+    return fresh_data
+
+
+def get_traffic_cache_info():
+    """Returns traffic cache information for UI display"""
+    return traffic_cache.get_cache_info()
+
+
+def clear_traffic_cache():
+    """Clears traffic cache"""
+    return traffic_cache.clear_cache()

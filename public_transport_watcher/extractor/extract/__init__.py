@@ -1,5 +1,6 @@
 from .addresses import extract_addresses_informations
 from .air_quality import extract_air_quality_data
+from .alerts import extract_alerts_data
 from .categ import extract_categ_data
 from .navigo import extract_navigo_validations
 from .schedule import extract_schedule_data
@@ -16,4 +17,5 @@ __all__ = [
     "extract_stations_informations",
     "extract_traffic_data",
     "extract_transport_data",
+    "extract_alerts_data",
 ]
