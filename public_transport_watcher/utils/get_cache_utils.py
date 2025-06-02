@@ -1,7 +1,9 @@
-import pickle
-import os
 from datetime import datetime, timedelta
+import os
+import pickle
+
 import pandas as pd
+
 from public_transport_watcher.logging_config import get_logger
 
 logger = get_logger()

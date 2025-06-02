@@ -1,13 +1,14 @@
 from datetime import datetime
+
 import streamlit as st
 
-from public_transport_watcher.utils.get_transports_icons import (
-    get_line_badge_for_streamlit,
-    extract_line_code_from_text,
-)
 from public_transport_watcher.extractor.extract.alerts import extract_alerts_data
 from public_transport_watcher.logging_config import get_logger
 from public_transport_watcher.utils import get_cache_info
+from public_transport_watcher.utils.get_transports_icons import (
+    extract_line_code_from_text,
+    get_line_badge_for_streamlit,
+)
 
 logger = get_logger()
 
