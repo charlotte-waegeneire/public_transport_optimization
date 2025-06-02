@@ -2,8 +2,8 @@ import streamlit as st
 
 from public_transport_watcher.monitoring.admin import create_new_user, login, show_users
 from public_transport_watcher.monitoring.api_use import dashboard_api, journey_search
-from public_transport_watcher.monitoring.reports import alerts, dashboard
 from public_transport_watcher.monitoring.data_quality import dashboard_data_quality
+from public_transport_watcher.monitoring.reports import alerts, dashboard
 
 if "logged_in" not in st.session_state:
     st.session_state.logged_in = False

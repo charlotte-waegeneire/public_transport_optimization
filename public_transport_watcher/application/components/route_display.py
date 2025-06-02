@@ -19,7 +19,9 @@ def get_route_summary_short(route_data: Dict) -> str:
     icon = "🚇" if graph_type == "base" else "⚡"
     type_label = "Standard" if graph_type == "base" else "Optimized"
 
-    transfer_text = f"{num_transfers} transfer{'s' if num_transfers > 1 else ''}" if num_transfers > 0 else "direct"
+    transfer_text = (
+        f"{num_transfers} correspondance{'s' if num_transfers > 1 else ''}" if num_transfers > 0 else "direct"
+    )
 
     return f"{icon} **{type_label}** - {travel_time} - {transfer_text}"
 
@@ -253,5 +255,9 @@ def display_route_results():
     st.markdown("### Trajet standard")
     display_route_info_collapsible(st.session_state.route_data_base, "base")
 
-    st.markdown("### Avez-vous quelques minutes de plus ? 🕒")
-    display_route_info_collapsible(st.session_state.route_data_weighted, "weighted")
+    if (
+        st.session_state.route_data_base["route_info"]["station_names"]
+        != st.session_state.route_data_weighted["route_info"]["station_names"]
+    ):
+        st.markdown("### Avez-vous quelques minutes de plus ? 🕒")
+        display_route_info_collapsible(st.session_state.route_data_weighted, "weighted")

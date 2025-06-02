@@ -11,6 +11,8 @@ MR #28
 
 ### Fixed
 - Weighting processing for congestion awareness in the graph model
+- Display for transfers
+- Do not show the "weighted" path if it doesn't differ from the basic one
 
 ## [0.26.0] - 2025-06-01
 MR #27
