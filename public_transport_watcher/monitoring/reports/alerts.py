@@ -35,9 +35,9 @@ def format_cache_time(cache_time):
 
     if minutes_ago < 1:
         return "À l'instant"
-    elif minutes_ago == 1:
+    if minutes_ago == 1:
         return "Il y a 1 minute"
-    elif minutes_ago < 60:
+    if minutes_ago < 60:
         return f"Il y a {minutes_ago} minutes"
     else:
         hours_ago = int(minutes_ago / 60)

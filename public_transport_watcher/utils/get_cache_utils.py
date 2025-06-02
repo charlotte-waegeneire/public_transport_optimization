@@ -28,7 +28,7 @@ class CacheManager:
 
             return cache_time, is_valid
         except Exception as e:
-            logger.error(f"Erreur lecture cache: {e}")
+            logger.error(f"Error reading cache: {e}")
             return None, False
 
     def is_cache_valid(self):
@@ -41,10 +41,10 @@ class CacheManager:
         try:
             with open(self.cache_file, "rb") as f:
                 cached_data = pickle.load(f)
-            logger.info(f"Données chargées depuis le cache (créé à {cached_data['timestamp'].strftime('%H:%M:%S')})")
+            logger.info(f"Data loaded from cache (created at {cached_data['timestamp'].strftime('%H:%M:%S')})")
             return cached_data["data"]
         except Exception as e:
-            logger.error(f"Erreur chargement cache: {e}")
+            logger.error(f"Error loading cache: {e}")
             return pd.DataFrame()
 
     def save_to_cache(self, data):
@@ -53,18 +53,18 @@ class CacheManager:
             cache_data = {"timestamp": datetime.now(), "data": data}
             with open(self.cache_file, "wb") as f:
                 pickle.dump(cache_data, f)
-            logger.info(f"Données sauvegardées en cache ({len(data)} enregistrements)")
+            logger.info(f"Data saved to cache ({len(data)} records)")
         except Exception as e:
-            logger.error(f"Erreur sauvegarde cache: {e}")
+            logger.error(f"Error saving cache: {e}")
 
     def clear_cache(self):
         """Removes cache file"""
         try:
             if os.path.exists(self.cache_file):
                 os.remove(self.cache_file)
-                logger.info("Cache supprimé")
+                logger.info("Cache deleted")
         except Exception as e:
-            logger.error(f"Erreur suppression cache: {e}")
+            logger.error(f"Error deleting cache: {e}")
 
 
 default_cache = CacheManager()
