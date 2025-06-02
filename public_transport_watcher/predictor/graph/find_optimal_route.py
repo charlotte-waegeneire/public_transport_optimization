@@ -157,7 +157,6 @@ def _create_route_info(G, path, path_extended, extended_G, path_length):
         "segments": [],
     }
 
-    current_transport = None
     num_transfers = 0
 
     for i in range(len(path_extended) - 1):
@@ -174,31 +173,33 @@ def _create_route_info(G, path, path_extended, extended_G, path_length):
         from_station = from_node[0] if isinstance(from_node, tuple) else from_node
         to_station = to_node[0] if isinstance(to_node, tuple) else to_node
 
-        if from_station != to_station:
-            transport_id = edge_data.get("transport_id")
-            travel_time = edge_data.get("weight", 5.0)
+        transport_id = edge_data.get("transport_id")
+        travel_time = edge_data.get("weight", 5.0)
 
-            is_transfer = False
-            if transport_id not in ["Start", "End", "Transfer"]:
-                if current_transport is not None and transport_id != current_transport:
-                    is_transfer = True
-                    num_transfers += 1
-                current_transport = transport_id
-            elif transport_id == "Transfer":
-                is_transfer = True
-                num_transfers += 1
+        is_transfer = edge_data.get("is_transfer", False)
 
-            segment = {
-                "from_station_id": from_station,
-                "from_station_name": G.nodes[from_station].get("name", f"Station {from_station}"),
-                "to_station_id": to_station,
-                "to_station_name": G.nodes[to_station].get("name", f"Station {to_station}"),
-                "transport_id": transport_id,
-                "travel_time_mins": travel_time,
-                "is_transfer": is_transfer,
-            }
+        if is_transfer:
+            num_transfers += 1
 
-            route_info["segments"].append(segment)
+        transport_name = edge_data.get("transport_name", "")
+        if not transport_name and transport_id not in ["Start", "End", "Transfer"]:
+            for u, v, data in G.edges(data=True):
+                if data.get("transport_id") == transport_id:
+                    transport_name = data.get("transport_name", str(transport_id))
+                    break
+
+        segment = {
+            "from_station_id": from_station,
+            "from_station_name": G.nodes[from_station].get("name", f"Station {from_station}"),
+            "to_station_id": to_station,
+            "to_station_name": G.nodes[to_station].get("name", f"Station {to_station}"),
+            "transport_id": transport_id,
+            "transport_name": transport_name,
+            "travel_time_mins": travel_time,
+            "is_transfer": is_transfer,
+        }
+
+        route_info["segments"].append(segment)
 
     route_info["num_transfers"] = num_transfers
 

@@ -141,7 +141,7 @@ def display_route_timeline(route_data: Dict):
     display_walking_info(route_data)
 
     station_transfers = {}
-    for _, segment in enumerate(segments):
+    for segment in segments:
         if segment.get("is_transfer", False):
             from_station_id = segment.get("from_station_id")
             transfer_time = segment.get("travel_time_mins", 0)
@@ -149,25 +149,39 @@ def display_route_timeline(route_data: Dict):
                 station_transfers[from_station_id] = 0
             station_transfers[from_station_id] += transfer_time
 
-    segment_index = 0
+    transport_segments = [seg for seg in segments if not seg.get("is_transfer", False)]
+
+    segment_map = {}
+    for segment in transport_segments:
+        from_name = segment.get("from_station_name", "")
+        to_name = segment.get("to_station_name", "")
+        if from_name and to_name:
+            segment_map[(from_name, to_name)] = segment
 
     for station_index, station in enumerate(station_names):
         display_station_with_transfers(station, station_index, len(station_names), station_transfers, route_info)
 
-        while segment_index < len(segments):
-            segment = segments[segment_index]
+        if station_index < len(station_names) - 1:
+            next_station = station_names[station_index + 1]
 
-            if segment.get("is_transfer", False):
-                segment_index += 1
-                continue
+            segment = segment_map.get((station, next_station))
 
-            from_station_name = segment.get("from_station_name", "")
-            if from_station_name == station or station_index < len(station_names) - 1:
+            if segment:
                 display_transport_segment(segment)
-                segment_index += 1
-                break
             else:
-                break
+                found_segment = None
+                for seg in transport_segments:
+                    from_name = seg.get("from_station_name", "").strip().upper()
+                    to_name = seg.get("to_station_name", "").strip().upper()
+                    current_station_clean = station.strip().upper()
+                    next_station_clean = next_station.strip().upper()
+
+                    if from_name == current_station_clean and to_name == next_station_clean:
+                        found_segment = seg
+                        break
+
+                if found_segment:
+                    display_transport_segment(found_segment)
 
     walking_dist_end = route_data.get("walking_distance_end", 0)
     walking_time_end = route_data.get("walking_duration_end", 0)
@@ -227,7 +241,6 @@ def display_route_info_collapsible(route_data: Dict, route_type: str):
     with st.expander(f"{route_summary}", expanded=False):
         st.markdown(f"**Transport:** {transport_summary}")
         st.markdown("---")
-        # Pass route_data to highlight transfer points
         route_map = create_route_map(_G, optimal_path, route_data=route_data, auto_zoom=True)
         st.plotly_chart(route_map, use_container_width=True, key=f"route_map_{route_type}")
         display_route_timeline(route_data)
