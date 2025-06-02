@@ -7,7 +7,7 @@ PREDICTION_CONFIG = {
         "base_network_path": get_env_variable("BASE_NETWORK_PATH"),
         "weighted_network_path": get_env_variable("WEIGHTED_NETWORK_PATH"),
         "adjust_station_weights": {
-            "weight_factor": 0.3,
+            "weight_factor": 1.5,
             "base_penalty": 5.0,
             "transfer_multiplier": 2.0,
         },

@@ -24,9 +24,9 @@ def adjust_station_weights(
     weight_factor : float, default=0.1
         Factor to control how much the frequency affects weights (higher means more impact)
     base_penalty : float, default=5.0
-        Base penalty (in minutes) for crowded stations when using "penalties" mode
+        Base penalty (in minutes) for crowded stations
     transfer_multiplier : float, default=2.0
-        Multiplier for penalties at transfer stations when using "penalties" mode
+        Multiplier for penalties at transfer stations
 
     Returns:
     --------

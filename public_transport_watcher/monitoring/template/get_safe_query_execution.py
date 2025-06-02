@@ -1,4 +1,5 @@
 import time
+
 import streamlit as st
 
 from public_transport_watcher.utils import get_query_result

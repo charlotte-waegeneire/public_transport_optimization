@@ -1,7 +1,7 @@
-import streamlit as st
 import pandas as pd
 import plotly.express as px
 import plotly.graph_objects as go
+import streamlit as st
 
 from public_transport_watcher.monitoring.template import get_safe_query_execution
 from public_transport_watcher.monitoring.template.display_metrics_container import display_metric_container
