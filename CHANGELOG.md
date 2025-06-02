@@ -9,7 +9,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 MR #28
 
 ### Added
-- pre-commit and sreamlit_searchbox to dependencies
+- `pre-commit` and `streamlit_searchbox` to dependencies
 
 ### Changed
 - Transport colors are the same used by RATP/SNCF
