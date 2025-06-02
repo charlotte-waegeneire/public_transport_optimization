@@ -30,7 +30,7 @@ def _map_transport_to_stations(G):
     return transport_at_station
 
 
-def _create_extended_graph_nodes(G, transport_at_station, transfer_penalty):
+def _create_extended_graph_nodes(G, transport_at_station, transfer_penalty, weighted=True):
     extended_G = nx.DiGraph()
 
     for node_id in G.nodes():
@@ -47,14 +47,27 @@ def _create_extended_graph_nodes(G, transport_at_station, transfer_penalty):
                     if i != j:  # Different transport lines
                         from_transport = transports[i]
                         to_transport = transports[j]
+
+                        # Calculate transfer penalty with congestion
+                        final_transfer_penalty = transfer_penalty
+                        if weighted:
+                            # Add congestion penalty for transfer station
+                            station_congestion = G.nodes[node_id].get("congestion_penalty", 0.0)
+                            is_transfer_station = G.nodes[node_id].get("is_transfer", False)
+
+                            if is_transfer_station:
+                                # Apply extra penalty for transfers at already crowded transfer stations
+                                final_transfer_penalty += station_congestion
+
                         # Add transfer edge with penalty
                         extended_G.add_edge(
                             (node_id, from_transport),
                             (node_id, to_transport),
-                            weight=transfer_penalty,
+                            weight=final_transfer_penalty,
                             original_edge=False,
                             is_transfer=True,
                             transport_id="Transfer",
+                            congestion_penalty=station_congestion if weighted else 0.0,
                         )
         else:
             extended_G.add_node(node_id, **node_attrs, original_id=node_id)
@@ -70,6 +83,7 @@ def _add_travel_edges(G, extended_G, transport_at_station):
         if u in transport_at_station and transport_id in transport_at_station[u]:
             if v in transport_at_station and transport_id in transport_at_station[v]:
                 # Add edge between the transport-specific nodes
+                # The weight already includes congestion penalties from adjust_station_weights
                 extended_G.add_edge((u, transport_id), (v, transport_id), **data, original_edge=True, is_transfer=False)
             elif v not in transport_at_station:
                 # Handle case where destination has no outgoing edges
@@ -161,37 +175,31 @@ def _create_route_info(G, path, path_extended, extended_G, path_length):
 
         transport_id = edge_data.get("transport_id")
         travel_time = edge_data.get("weight", 5.0)
+
         is_transfer = edge_data.get("is_transfer", False)
 
-        if from_station == to_station and is_transfer:
-            segment = {
-                "from_station_id": from_station,
-                "from_station_name": G.nodes[from_station].get("name", f"Station {from_station}"),
-                "to_station_id": to_station,
-                "to_station_name": G.nodes[to_station].get("name", f"Station {to_station}"),
-                "transport_id": "Transfer",
-                "transport_name": "Transfer",
-                "travel_time_mins": travel_time,
-                "is_transfer": True,
-            }
-            route_info["segments"].append(segment)
+        if is_transfer:
             num_transfers += 1
 
-        elif from_station != to_station:
-            transport_name = edge_data.get("transport_name", edge_data.get("name", transport_id))
+        transport_name = edge_data.get("transport_name", "")
+        if not transport_name and transport_id not in ["Start", "End", "Transfer"]:
+            for u, v, data in G.edges(data=True):
+                if data.get("transport_id") == transport_id:
+                    transport_name = data.get("transport_name", str(transport_id))
+                    break
 
-            segment = {
-                "from_station_id": from_station,
-                "from_station_name": G.nodes[from_station].get("name", f"Station {from_station}"),
-                "to_station_id": to_station,
-                "to_station_name": G.nodes[to_station].get("name", f"Station {to_station}"),
-                "transport_id": transport_id,
-                "transport_name": transport_name,
-                "travel_time_mins": travel_time,
-                "is_transfer": False,
-            }
+        segment = {
+            "from_station_id": from_station,
+            "from_station_name": G.nodes[from_station].get("name", f"Station {from_station}"),
+            "to_station_id": to_station,
+            "to_station_name": G.nodes[to_station].get("name", f"Station {to_station}"),
+            "transport_id": transport_id,
+            "transport_name": transport_name,
+            "travel_time_mins": travel_time,
+            "is_transfer": is_transfer,
+        }
 
-            route_info["segments"].append(segment)
+        route_info["segments"].append(segment)
 
     route_info["num_transfers"] = num_transfers
 
@@ -199,21 +207,28 @@ def _create_route_info(G, path, path_extended, extended_G, path_length):
 
 
 def find_optimal_route(
-    G: nx.DiGraph, start_station_id: int, end_station_id: int, transfer_penalty: float = 5.0
+    G: nx.DiGraph,
+    start_station_id: int,
+    end_station_id: int,
+    transfer_penalty: float = 5.0,
+    weighted: bool = True,
 ) -> tuple[list, float, dict]:
     """
     Find the optimal route between two stations with proper handling of transfer penalties
+    and optional congestion awareness.
 
     Parameters:
     -----------
     G : networkx.DiGraph
-        The transport network graph
+        The transport network graph (should be processed with adjust_station_weights for congestion awareness)
     start_station_id : int
         ID of the starting station
     end_station_id : int
         ID of the destination station
     transfer_penalty : float
         Additional time (in minutes) to add for transfers
+    weighted : bool, default=True
+        Whether to consider congestion penalties in routing decisions
 
     Returns:
     --------
@@ -222,7 +237,7 @@ def find_optimal_route(
     float
         Total travel time/weight of the path (in minutes)
     dict
-        Additional information about the route (stations names, transfers, etc.)
+        Additional information about the route (stations names, transfers, congestion, etc.)
     """
     valid, error = _validate_stations(G, start_station_id, end_station_id)
     if not valid:
@@ -230,7 +245,7 @@ def find_optimal_route(
 
     transport_at_station = _map_transport_to_stations(G)
 
-    extended_G = _create_extended_graph_nodes(G, transport_at_station, transfer_penalty)
+    extended_G = _create_extended_graph_nodes(G, transport_at_station, transfer_penalty, weighted)
     _add_travel_edges(G, extended_G, transport_at_station)
 
     start_node_extended = _handle_start_station(G, extended_G, start_station_id, transport_at_station)

@@ -1,10 +1,15 @@
-import pickle
-import os
 from datetime import datetime, timedelta
-import pandas as pd
-from public_transport_watcher.logging_config import get_logger
+import os
+import pickle
 
-logger = get_logger()
+import pandas as pd
+
+
+def _get_logger():
+    """Get logger with delayed import to avoid circular dependency"""
+    from public_transport_watcher.logging_config import get_logger
+
+    return get_logger()
 
 
 class CacheManager:
@@ -28,7 +33,7 @@ class CacheManager:
 
             return cache_time, is_valid
         except Exception as e:
-            logger.error(f"Error reading cache: {e}")
+            _get_logger().error(f"Error reading cache: {e}")
             return None, False
 
     def is_cache_valid(self):
@@ -41,10 +46,10 @@ class CacheManager:
         try:
             with open(self.cache_file, "rb") as f:
                 cached_data = pickle.load(f)
-            logger.info(f"Data loaded from cache (created at {cached_data['timestamp'].strftime('%H:%M:%S')})")
+            _get_logger().info(f"Data loaded from cache (created at {cached_data['timestamp'].strftime('%H:%M:%S')})")
             return cached_data["data"]
         except Exception as e:
-            logger.error(f"Error loading cache: {e}")
+            _get_logger().error(f"Error loading cache: {e}")
             return pd.DataFrame()
 
     def save_to_cache(self, data):
@@ -53,18 +58,18 @@ class CacheManager:
             cache_data = {"timestamp": datetime.now(), "data": data}
             with open(self.cache_file, "wb") as f:
                 pickle.dump(cache_data, f)
-            logger.info(f"Data saved to cache ({len(data)} records)")
+            _get_logger().info(f"Data saved to cache ({len(data)} records)")
         except Exception as e:
-            logger.error(f"Error saving cache: {e}")
+            _get_logger().error(f"Error saving cache: {e}")
 
     def clear_cache(self):
         """Removes cache file"""
         try:
             if os.path.exists(self.cache_file):
                 os.remove(self.cache_file)
-                logger.info("Cache deleted")
+                _get_logger().info("Cache deleted")
         except Exception as e:
-            logger.error(f"Error deleting cache: {e}")
+            _get_logger().error(f"Error deleting cache: {e}")
 
 
 default_cache = CacheManager()

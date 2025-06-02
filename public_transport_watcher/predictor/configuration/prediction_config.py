@@ -7,9 +7,9 @@ PREDICTION_CONFIG = {
         "base_network_path": get_env_variable("BASE_NETWORK_PATH"),
         "weighted_network_path": get_env_variable("WEIGHTED_NETWORK_PATH"),
         "adjust_station_weights": {
-            "weight_factor": 0.1,
-            "min_factor": 0.5,
-            "max_factor": 1.5,
+            "weight_factor": 1.5,
+            "base_penalty": 5.0,
+            "transfer_multiplier": 2.0,
         },
     },
     "arima": {

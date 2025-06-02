@@ -1,5 +1,6 @@
-import streamlit as st
 import plotly.express as px
+import streamlit as st
+
 from public_transport_watcher.monitoring.template import get_safe_query_execution
 from public_transport_watcher.monitoring.template.display_metrics_container import display_metric_container
 from public_transport_watcher.monitoring.template.format_metrics import format_metric
