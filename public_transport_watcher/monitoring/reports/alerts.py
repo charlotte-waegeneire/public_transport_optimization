@@ -23,8 +23,10 @@ def get_severity_icon(message, cause=None):
     lowered = message.lower()
     if any(word in lowered for word in ["alerte", "interrompu", "fermé"]):
         return "🚨"
-    elif any(word in lowered for word in ["retard", "ralenti", "perturbé", "dévié"]):
+
+    if any(word in lowered for word in ["retard", "ralenti", "perturbé", "dévié"]):
         return "⚠️"
+
     return "ℹ️"
 
 
@@ -35,13 +37,15 @@ def format_cache_time(cache_time):
 
     if minutes_ago < 1:
         return "À l'instant"
+
     if minutes_ago == 1:
         return "Il y a 1 minute"
+
     if minutes_ago < 60:
         return f"Il y a {minutes_ago} minutes"
-    else:
-        hours_ago = int(minutes_ago / 60)
-        return f"Il y a {hours_ago} heure{'s' if hours_ago > 1 else ''}"
+
+    hours_ago = int(minutes_ago / 60)
+    return f"Il y a {hours_ago} heure{'s' if hours_ago > 1 else ''}"
 
 
 def alerts():
@@ -78,7 +82,6 @@ def alerts():
     df["icone_ligne"] = df["ligne_complete"].apply(lambda x: get_line_badge_for_streamlit(x, size="medium"))
 
     selected_modes = st.multiselect("Modes de transport", options=df["mode"].unique(), default=df["mode"].unique())
-
     filtered_df = df[df["mode"].isin(selected_modes)]
 
     total_disruptions = len(filtered_df[filtered_df["short_message"].str.len() > 0])
