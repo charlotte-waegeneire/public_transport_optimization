@@ -4,11 +4,22 @@ import networkx as nx
 import plotly.graph_objects as go
 import streamlit as st
 
+from public_transport_watcher.logging_config import get_logger
+from public_transport_watcher.utils.get_transports_icons import ParisTransportMapping, extract_line_code_from_text
+
+logger = get_logger()
+
 
 def get_transport_color(transport_name: str) -> str:
-    """Get the same color used in timeline for transport lines"""
-    colors = ["#FF6B35", "#4ECDC4", "#45B7D1", "#96CEB4", "#FFEAA7", "#DDA0DD"]
-    return colors[hash(str(transport_name)) % len(colors)]
+    """Get the official Paris transport color for a line, with fallback to hash-based colors"""
+    line_code = extract_line_code_from_text(transport_name)
+    if line_code:
+        official_color = ParisTransportMapping.get_line_color(line_code)
+        if official_color:
+            return official_color
+
+    logger.error(f"No official color found for {transport_name}")
+    return
 
 
 def get_transfer_stations(route_data: Dict) -> List[int]:
@@ -29,7 +40,7 @@ def get_transfer_stations(route_data: Dict) -> List[int]:
 
 
 def create_colored_line_segments(G: nx.DiGraph, optimal_path: List[int], route_data: Dict):
-    """Create colored line segments for each transport line"""
+    """Create colored line segments for each transport line using official Paris transport colors"""
     if not route_data:
         return []
 
@@ -50,11 +61,13 @@ def create_colored_line_segments(G: nx.DiGraph, optimal_path: List[int], route_d
                 to_lat, to_lon = to_node.get("lat"), to_node.get("lon")
 
                 if all([from_lat, from_lon, to_lat, to_lon]):
+                    official_color = get_transport_color(transport_name)
+
                     colored_segments.append(
                         {
                             "coords": [(from_lat, from_lon), (to_lat, to_lon)],
                             "transport_name": transport_name,
-                            "color": get_transport_color(transport_name),
+                            "color": official_color,
                         }
                     )
 
@@ -112,7 +125,7 @@ def create_route_map(
     fallback_center_lon: float = 2.3522,
     fallback_zoom: int = 11,
 ) -> go.Figure:
-    """Create an interactive map with colored line segments for each transport line"""
+    """Create an interactive map with colored line segments using official Paris transport colors"""
     route_coords = []
     station_info = []
 
@@ -145,18 +158,27 @@ def create_route_map(
     if route_data:
         colored_segments = create_colored_line_segments(G, optimal_path, route_data)
 
+        transport_lines = {}
         for segment in colored_segments:
-            lats, lons = zip(*segment["coords"])
-            fig.add_trace(
-                go.Scattermapbox(
-                    lat=lats,
-                    lon=lons,
-                    mode="lines",
-                    line=dict(width=6, color=segment["color"]),
-                    name=segment["transport_name"],
-                    hoverinfo="skip",
+            transport_name = segment["transport_name"]
+            if transport_name not in transport_lines:
+                transport_lines[transport_name] = {"coords": [], "color": segment["color"]}
+            transport_lines[transport_name]["coords"].extend(segment["coords"])
+
+        for transport_name, line_data in transport_lines.items():
+            if line_data["coords"]:
+                lats, lons = zip(*line_data["coords"])
+                fig.add_trace(
+                    go.Scattermapbox(
+                        lat=lats,
+                        lon=lons,
+                        mode="lines",
+                        line=dict(width=5, color=line_data["color"]),
+                        name=transport_name,
+                        hoverinfo="name",
+                        showlegend=False,
+                    )
                 )
-            )
     else:
         if len(route_coords) > 1:
             lats, lons = zip(*route_coords)
@@ -165,8 +187,6 @@ def create_route_map(
                     lat=lats, lon=lons, mode="lines", line=dict(width=4, color="blue"), name="Route", hoverinfo="skip"
                 )
             )
-
-    transfer_stations = get_transfer_stations(route_data) if route_data else []
 
     if station_info:
         start_station = station_info[0]
@@ -177,7 +197,7 @@ def create_route_map(
                 lat=[start_station["lat"]],
                 lon=[start_station["lon"]],
                 mode="markers",
-                marker=dict(size=15, color="green"),
+                marker=dict(size=18, color="green", symbol="circle"),
                 text=[f"DÉPART: {start_station['name']}"],
                 hovertemplate="<b>%{text}</b><extra></extra>",
                 name="Départ",
@@ -191,7 +211,7 @@ def create_route_map(
                     lat=[end_station["lat"]],
                     lon=[end_station["lon"]],
                     mode="markers",
-                    marker=dict(size=15, color="red"),
+                    marker=dict(size=18, color="red", symbol="circle"),
                     text=[f"ARRIVÉE: {end_station['name']}"],
                     hovertemplate="<b>%{text}</b><extra></extra>",
                     name="Arrivée",
@@ -199,55 +219,12 @@ def create_route_map(
                 )
             )
 
-        middle_stations = station_info[1:-1] if len(station_info) > 2 else []
-
-        if middle_stations:
-            transfer_lats, transfer_lons, transfer_names = [], [], []
-            regular_lats, regular_lons, regular_names = [], [], []
-
-            for station in middle_stations:
-                if station["id"] in transfer_stations:
-                    transfer_lats.append(station["lat"])
-                    transfer_lons.append(station["lon"])
-                    transfer_names.append(f"CORRESPONDANCE: {station['name']}")
-                else:
-                    regular_lats.append(station["lat"])
-                    regular_lons.append(station["lon"])
-                    regular_names.append(station["name"])
-
-            if transfer_lats:
-                fig.add_trace(
-                    go.Scattermapbox(
-                        lat=transfer_lats,
-                        lon=transfer_lons,
-                        mode="markers",
-                        marker=dict(size=12, color="orange", symbol="diamond"),
-                        text=transfer_names,
-                        hovertemplate="<b>%{text}</b><extra></extra>",
-                        name="Correspondances",
-                        showlegend=False,
-                    )
-                )
-
-            if regular_lats:
-                fig.add_trace(
-                    go.Scattermapbox(
-                        lat=regular_lats,
-                        lon=regular_lons,
-                        mode="markers",
-                        marker=dict(size=8, color="lightblue"),
-                        text=regular_names,
-                        hovertemplate="<b>%{text}</b><extra></extra>",
-                        name="Stations",
-                        showlegend=False,
-                    )
-                )
-
     fig.update_layout(
         mapbox=dict(style="open-street-map", center=dict(lat=center_lat, lon=center_lon), zoom=zoom),
         height=600,
         margin=dict(l=0, r=0, t=0, b=0),
         showlegend=False,
+        hovermode="closest",
     )
 
     return fig

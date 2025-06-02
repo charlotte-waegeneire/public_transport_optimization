@@ -4,6 +4,7 @@ import streamlit as st
 
 from public_transport_watcher.application.components.route_map import create_route_map
 from public_transport_watcher.predictor.graph_builder import GraphBuilder
+from public_transport_watcher.utils.get_transports_icons import get_line_badge_for_streamlit
 
 _GRAPH_BUILDER = GraphBuilder()
 _G = _GRAPH_BUILDER.load_graph("base")
@@ -27,21 +28,26 @@ def get_route_summary_short(route_data: Dict) -> str:
 
 
 def get_transport_summary(route_data: Dict) -> str:
-    """Generate a summary of transport modes used."""
+    """Generate a summary of transport modes used with line badges."""
     route_info = route_data.get("route_info", {})
     segments = route_info.get("segments", [])
 
+    transport_badges = []
     transport_names = []
+
     for segment in segments:
         if not segment.get("is_transfer", False):
             transport_name = segment.get("transport_name", "")
             if transport_name and transport_name not in transport_names:
                 transport_names.append(transport_name)
+                line_badge = get_line_badge_for_streamlit(transport_name, size="small")
+                if line_badge:
+                    transport_badges.append(line_badge)
 
-    if not transport_names:
+    if not transport_badges:
         return "No transport"
 
-    return " → ".join(transport_names)
+    return " → ".join(transport_badges)
 
 
 def display_walking_info(route_data: Dict):
@@ -94,30 +100,24 @@ def display_station(station: str, index: int, total_stations: int, segments: Lis
 
 
 def display_transport_segment(segment: Dict):
-    """Display a transport segment with colored badge - only for actual transport, not transfers."""
+    """Display a transport segment with proper Paris transport line badge."""
     travel_time_seg = segment.get("travel_time_mins", 0)
     is_transfer = segment.get("is_transfer", False)
     transport_name = segment.get("transport_name", "")
 
-    if not is_transfer:
-        colors = ["#FF6B35", "#4ECDC4", "#45B7D1", "#96CEB4", "#FFEAA7", "#DDA0DD"]
-        color = colors[hash(str(transport_name)) % len(colors)]
+    if not is_transfer and transport_name:
+        line_badge = get_line_badge_for_streamlit(transport_name, size="medium")
 
-        st.markdown(
-            f"""
-            &nbsp;&nbsp;&nbsp;&nbsp;
-            <span style="
-                background-color: {color}; 
-                color: white; 
-                padding: 2px 8px; 
-                border-radius: 10px; 
-                font-size: 12px;
-                font-weight: bold;
-            ">{transport_name}</span> 
-            <em>({travel_time_seg:.0f} min)</em>
-            """,
-            unsafe_allow_html=True,
-        )
+        if line_badge:
+            # Use the official badge with travel time
+            st.markdown(
+                f"""
+                &nbsp;&nbsp;&nbsp;&nbsp;
+                {line_badge} 
+                <em>({travel_time_seg:.0f} min)</em>
+                """,
+                unsafe_allow_html=True,
+            )
 
 
 def get_transfer_time_for_station(segments: List[Dict], station_index: int) -> float:
@@ -235,13 +235,14 @@ def display_station_with_transfers(
 
 
 def display_route_info_collapsible(route_data: Dict, route_type: str):
-    """Display route information in a collapsible expander."""
+    """Display route information in a collapsible expander with transport badges."""
     route_summary = get_route_summary_short(route_data)
     transport_summary = get_transport_summary(route_data)
     optimal_path = route_data.get("optimal_path", [])
 
     with st.expander(f"{route_summary}", expanded=False):
-        st.markdown(f"**Transport:** {transport_summary}")
+        st.markdown("**Transport:** ", unsafe_allow_html=False)
+        st.markdown(transport_summary, unsafe_allow_html=True)
         st.markdown("---")
         route_map = create_route_map(_G, optimal_path, route_data=route_data, auto_zoom=True)
         st.plotly_chart(route_map, use_container_width=True, key=f"route_map_{route_type}")

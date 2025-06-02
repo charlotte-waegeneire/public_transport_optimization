@@ -3,7 +3,7 @@ from logging.handlers import TimedRotatingFileHandler
 import os
 import sys
 
-from public_transport_watcher.utils import get_env_variable
+from public_transport_watcher.utils.get_env_variable import get_env_variable
 
 LOG_DIR = get_env_variable("LOGS_ROOT")
 LOG_FILE = os.path.join(LOG_DIR, "services", "transport_watcher.log")
