@@ -36,3 +36,5 @@ def visualize_network(G: nx.DiGraph, node_size: int = 50, with_labels: bool = Fa
     plt.axis("off")
     plt.tight_layout()
     plt.show()
+
+    return plt

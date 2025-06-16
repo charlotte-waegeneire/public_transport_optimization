@@ -81,6 +81,10 @@ Response pattern :
 {
   "walking_distance": 1234.56,
   "walking_duration": 15.3,
+  "walking_distance_start": 567.89,
+  "walking_duration_start": 7.5,
+  "walking_distance_end": 666.67,
+  "walking_duration_end": 7.8,
   "network_time": 25.0,
   "total_time": 40.3,
   "optimal_path": [123, 456, 789],
@@ -96,8 +100,9 @@ Response pattern :
         "to_station_id": 456,
         "to_station_name": "Station B",
         "transport_id": "Line 1",
+        "transport_name": "Metro Line 1",
         "travel_time_mins": 12.5,
-        "is_transfer": false
+        "is_transfer": true
       },
       {
         "from_station_id": 456,
@@ -105,14 +110,51 @@ Response pattern :
         "to_station_id": 789,
         "to_station_name": "Station C",
         "transport_id": "Line 2",
+        "transport_name": "Metro Line 2",
         "travel_time_mins": 12.5,
-        "is_transfer": true
+        "is_transfer": false
       }
     ],
     "num_transfers": 1
-  }
+  },
+  "graph_type": "base"
 }
 ```
+
+The response includes:
+- Walking information: total distance/duration and separate start/end walking details
+- Network travel time and total journey time
+- The optimal path as a list of station IDs
+- Detailed route information including station names, segments with transport details, and transfer information
+- The type of graph used for routing ("base" or "weighted")
+
+### Search Address Coordinates API
+
+```
+GET /api/v1/routes/search_address_coordinates
+```
+
+| Parameter | Type | Description | Example |
+|-----------|------|-------------|---------|
+| query | String | Search query for address | "123 rue de rivoli" |
+| limit | Integer (optional) | Maximum number of results to return (default: 10, max: 100) | 5 |
+
+Response pattern:
+
+```json
+{
+  "addresses": [
+    {
+      "address": "123 rue de rivoli 1er arrondissement",
+      "latitude": 48.855089551123996,
+      "longitude": 2.394484471898831
+    }
+  ],
+  "total_found": 1
+}
+```
+
+The search is case-insensitive and matches partial words. It searches across street numbers, street names, and arrondissements.
 
 ## Running the API
 
