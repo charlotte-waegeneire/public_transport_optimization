@@ -8,7 +8,7 @@ from public_transport_watcher.utils import get_engine
 logger = get_logger()
 
 
-def insert_schedule_data(df: pd.DataFrame, config: dict) -> None:
+def insert_schedule_informations(df: pd.DataFrame, config: dict) -> None:
     """
     Insert schedule data into the database.
 

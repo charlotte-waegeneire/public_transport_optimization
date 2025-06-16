@@ -8,7 +8,7 @@ from public_transport_watcher.utils import get_engine
 logger = get_logger()
 
 
-def insert_transport_modes(df: pd.DataFrame) -> None:
+def insert_transport_categories(df: pd.DataFrame) -> None:
     """
     Insert unique transport modes into the database.
     """

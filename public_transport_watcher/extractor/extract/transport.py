@@ -6,7 +6,7 @@ from public_transport_watcher.logging_config import get_logger
 logger = get_logger()
 
 
-def extract_transport_data() -> pd.DataFrame:
+def extract_transport_lines_informations() -> pd.DataFrame:
     """
     Extracts and cleans transport line data.
     Loads the lines data from a CSV file, normalizes transport modes,

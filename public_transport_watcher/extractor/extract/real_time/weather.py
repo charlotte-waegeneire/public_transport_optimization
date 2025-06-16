@@ -16,7 +16,7 @@ _TOKEN = get_env_variable("INFOCLIMAT_API_KEY")
 _URL_BASE = "https://www.infoclimat.fr/opendata/?version=2&method=get&format=json&stations[]={station}&start={start_date}&token={token}"
 
 
-def _fetch_weather_data(url):
+def _fetch_weather_informations(url):
     try:
         headers = _HEADERS
         response = requests.get(url, headers=headers)
@@ -42,7 +42,7 @@ def _fetch_weather_data(url):
         return None
 
 
-def extract_weather_data(config):
+def extract_weather_informations(config):
     station = config.get("station", "")
     if not station:
         logger.error("No station provided in the config")
@@ -51,7 +51,7 @@ def extract_weather_data(config):
     now = datetime.now()
     start_date = now.strftime("%Y-%m-%d")
     url = _URL_BASE.format(station=station, start_date=start_date, token=_TOKEN)
-    raw_data = _fetch_weather_data(url)
+    raw_data = _fetch_weather_informations(url)
     if not raw_data:
         logger.error("No weather data fetched")
         return None

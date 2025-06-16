@@ -1,20 +1,20 @@
 import pandas as pd
 
-from public_transport_watcher.extractor.insert import insert_stations_informations
 from public_transport_watcher.logging_config import get_logger
 from public_transport_watcher.utils import get_datalake_file
 
 logger = get_logger()
 
 
-def extract_stations_informations(batch_size: int = 100):
+def extract_stations_informations() -> pd.DataFrame:
     """
     Extract and process metro station information from a CSV file.
 
-    Parameters
-    ----------
-    batch_size : int, optional
-        Number of records to process in each batch, by default 100
+    Returns
+    -------
+    pd.DataFrame
+        DataFrame containing processed station information with columns:
+        id, name, latitude, longitude
     """
     logger.info("Starting metro stations information extraction")
 
@@ -22,7 +22,7 @@ def extract_stations_informations(batch_size: int = 100):
         stations_file = get_datalake_file("geography", "stations")
         if not stations_file:
             logger.error("No station files found in datalake")
-            return
+            return pd.DataFrame()
 
         stations_file = stations_file[0]
         logger.info(f"Processing stations from file: {stations_file}")
@@ -49,9 +49,10 @@ def extract_stations_informations(batch_size: int = 100):
         stations_df = stations_df.drop_duplicates(subset=["id"])
         stations_df["name"] = stations_df["name"].str.upper()
 
-        logger.info(f"Inserting {len(stations_df)} metro stations to database")
-        insert_stations_informations(stations_df, batch_size)
+        logger.info(f"Processed {len(stations_df)} metro stations")
         logger.info("Metro stations information extraction completed successfully")
+        return stations_df
 
     except Exception as e:
         logger.error(f"Error processing metro stations: {str(e)}")
+        return pd.DataFrame()

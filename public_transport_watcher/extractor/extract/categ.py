@@ -6,7 +6,7 @@ from public_transport_watcher.logging_config import get_logger
 logger = get_logger()
 
 
-def extract_categ_data() -> pd.DataFrame:
+def extract_transport_categories_informations() -> pd.DataFrame:
     """
     Extracts transport modes from the lines data.
     Loads the lines data from a CSV file, filters relevant columns,
@@ -23,9 +23,3 @@ def extract_categ_data() -> pd.DataFrame:
     except Exception as e:
         logger.error(f"Failed to extract transport categories: {e}")
         return pd.DataFrame()
-
-
-df_categ = extract_categ_data()
-logger.info(f"Extracted categories data: {df_categ.shape}")
-if df_categ.empty:
-    logger.warning("No categories data extracted.")
