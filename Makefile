@@ -1,4 +1,4 @@
-.PHONY: help install install-dev clean lint format test test-coverage run-api run-dashboard run-scraper run-scheduler db-init db-migrate db-upgrade db-downgrade db-seed db-reset docker-build docker-up docker-down logs build dist upload-test upload-prod
+.PHONY: help install install-dev clean lint format test test-coverage test-predictor test-extractor test-all run-api run-dashboard run-scraper run-scheduler db-init db-migrate db-upgrade db-downgrade db-seed db-reset docker-build docker-up docker-down logs build dist upload-test upload-prod
 
 # Default target
 help:
@@ -11,8 +11,12 @@ help:
 	@echo "  Code Quality:"
 	@echo "    lint             Run linting with ruff"
 	@echo "    format           Format code with ruff"
-	@echo "    test             Run tests"
+	@echo "    test             Run all tests"
 	@echo "    test-coverage    Run tests with coverage report"
+	@echo "    test-predictor   Run predictor module tests"
+	@echo "    test-extractor   Run extractor module tests"
+	@echo "    test-all         Run all tests with verbose output"
+	@echo "    pre-commit       Run linting and tests (pre-commit checks)"
 	@echo ""
 	@echo "  Application:"
 	@echo "    run-api          Start the Flask API server"
@@ -66,6 +70,22 @@ lint:
 format:
 	ruff format .
 	ruff check --fix .
+
+# Testing
+test:
+	pytest public_transport_watcher/tests/ -v
+
+test-coverage:
+	pytest public_transport_watcher/tests/ --cov=public_transport_watcher --cov-report=html --cov-report=term-missing
+
+test-predictor:
+	pytest public_transport_watcher/tests/predictor/ -v
+
+test-extractor:
+	pytest public_transport_watcher/tests/extractor/ -v
+
+test-all:
+	pytest public_transport_watcher/tests/ -v --tb=short
 
 # Application runners
 run-extractor:
@@ -130,6 +150,9 @@ dev-setup: install-dev
 
 check: lint test
 	@echo "All checks passed!"
+
+pre-commit: lint test
+	@echo "Pre-commit checks passed!"
 
 deploy-prep: clean lint test build
 	@echo "Ready for deployment!" 

@@ -7,4 +7,14 @@ repos:
     -   id: ruff
         args: [ --fix ]
     # Formatting
-    -   id: ruff-format 
+    -   id: ruff-format
+
+-   repo: local
+    hooks:
+    -   id: pytest
+        name: pytest
+        entry: pytest
+        language: system
+        pass_filenames: false
+        always_run: true
+        args: [public_transport_watcher/tests/, -v] 
