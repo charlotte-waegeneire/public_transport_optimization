@@ -6,7 +6,7 @@ from public_transport_watcher.utils import get_datalake_file
 logger = get_logger()
 
 
-def _extract_gtfs_data() -> dict[str, pd.DataFrame]:
+def _extract_gtfs_informations() -> dict[str, pd.DataFrame]:
     """
     Loads GTFS data files: stop_times, trips, calendar, and stops.
 
@@ -37,7 +37,7 @@ def _extract_gtfs_data() -> dict[str, pd.DataFrame]:
         return {}
 
 
-def extract_schedule_data() -> pd.DataFrame:
+def extract_schedule_informations() -> pd.DataFrame:
     """
     Processes schedule data from GTFS files and merges them into a single DataFrame.
     Returns a DataFrame with arrival_timestamp, stop_id (from parent_station),
@@ -45,7 +45,7 @@ def extract_schedule_data() -> pd.DataFrame:
     """
     logger.info("Extracting GTFS data...")
 
-    gtfs_data = _extract_gtfs_data()
+    gtfs_data = _extract_gtfs_informations()
 
     logger.info("GTFS data extracted successfully. Starting to process...")
 

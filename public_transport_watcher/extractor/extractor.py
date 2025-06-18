@@ -1,22 +1,25 @@
 from public_transport_watcher.extractor.configuration import EXTRACTION_CONFIG
 from public_transport_watcher.extractor.extract import (
     extract_addresses_informations,
-    extract_air_quality_data,
-    extract_categ_data,
-    extract_navigo_validations,
-    extract_schedule_data,
+    extract_air_quality_informations,
+    extract_navigo_validations_informations,
+    extract_schedule_informations,
     extract_stations_informations,
-    extract_traffic_data,
-    extract_transport_data,
+    extract_traffic_informations,
+    extract_transport_categories_informations,
+    extract_transport_lines_informations,
 )
 from public_transport_watcher.extractor.extract.real_time import (
-    extract_weather_data,
+    extract_weather_informations,
     get_latest_air_quality_csv,
 )
 from public_transport_watcher.extractor.insert import (
-    insert_schedule_data,
+    insert_addresses_informations,
+    insert_navigo_validations,
+    insert_schedule_informations,
+    insert_stations,
+    insert_transport_categories,
     insert_transport_lines,
-    insert_transport_modes,
 )
 from public_transport_watcher.logging_config import get_logger
 from public_transport_watcher.utils import get_query_result
@@ -30,8 +33,10 @@ class Extractor:
 
     def extract_stations_data(self):
         config = self.extract_config.get("stations")
-        batch_size = config.get("batch_size", 100)
-        extract_stations_informations(batch_size)
+        batch_size = config.get("batch_size", 1000)
+        stations_df = extract_stations_informations()
+        if not stations_df.empty:
+            insert_stations(stations_df, batch_size)
 
     def extract_navigo_validations(self):
         config = self.extract_config.get("navigo")
@@ -39,39 +44,47 @@ class Extractor:
         if existing_entries.empty:
             logger.error("No existing stations found. Import stations data first.")
             return
-        extract_navigo_validations(config)
+
+        navigo_df = extract_navigo_validations_informations(config)
+        if not navigo_df.empty:
+            insert_navigo_validations(navigo_df)
 
     def extract_addresses_informations(self):
         config = self.extract_config.get("addresses", {})
         batch_size = config.get("batch_size", 1000)
-        extract_addresses_informations(batch_size)
+        addresses_df = extract_addresses_informations()
+        if not addresses_df.empty:
+            insert_addresses_informations(addresses_df, batch_size)
 
     def extract_traffic_data(self):
-        return extract_traffic_data()
+        return extract_traffic_informations()
 
     def extract_air_quality_data(self):
         get_latest_air_quality_csv()
         config = self.extract_config.get("pollution", {})
         pollutants = config.get("pollutants", [])
         limits = config.get("limits", {})
-        return extract_air_quality_data(pollutants, limits)
+        return extract_air_quality_informations(pollutants, limits)
 
     def extract_weather_data(self):
         config = self.extract_config.get("weather", {})
-        return extract_weather_data(config)
+        return extract_weather_informations(config)
 
     def extract_categ_data(self):
-        df = extract_categ_data()
-        insert_transport_modes(df)
+        categ_df = extract_transport_categories_informations()
+        if not categ_df.empty:
+            insert_transport_categories(categ_df)
 
     def extract_transport_data(self):
-        df = extract_transport_data()
-        insert_transport_lines(df)
+        transport_df = extract_transport_lines_informations()
+        if not transport_df.empty:
+            insert_transport_lines(transport_df)
 
     def extract_schedule_data(self):
         config = self.extract_config.get("schedule", {})
-        df = extract_schedule_data()
-        insert_schedule_data(df, config)
+        schedule_df = extract_schedule_informations()
+        if not schedule_df.empty:
+            insert_schedule_informations(schedule_df, config)
 
 
 if __name__ == "__main__":

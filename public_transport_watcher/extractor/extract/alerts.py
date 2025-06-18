@@ -146,7 +146,7 @@ def _process_api_data(data):
     return df
 
 
-def extract_alerts_data(force_refresh=False):
+def extract_traffic_alerts_informations(force_refresh=False):
     """
     Main entry point for extracting alerts data
 

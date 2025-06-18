@@ -4,7 +4,6 @@ from holidays import France
 import pandas as pd
 
 from public_transport_watcher.extractor.configuration import COLUMN_MAPPING
-from public_transport_watcher.extractor.insert import insert_navigo_data
 from public_transport_watcher.logging_config import get_logger
 from public_transport_watcher.utils import get_datalake_file
 
@@ -14,7 +13,7 @@ _HOLIDAYS = France(years=[2023, 2024]).keys()
 _COLUMN_MAPPING = COLUMN_MAPPING["navigo"]
 
 
-def extract_navigo_validations(config: Dict) -> None:
+def extract_navigo_validations_informations(config: Dict) -> pd.DataFrame:
     """
     Extract and process Navigo validations for all configured time periods.
 
@@ -22,8 +21,11 @@ def extract_navigo_validations(config: Dict) -> None:
     ----------
     config : Dict
         Configuration dictionary with years and their corresponding time periods.
-    batch_size : int
-        Number of records to process at once.
+
+    Returns
+    -------
+    pd.DataFrame
+        DataFrame containing the processed Navigo validations data.
     """
     logger.info("Extracting Navigo validations")
 
@@ -32,48 +34,67 @@ def extract_navigo_validations(config: Dict) -> None:
 
     if not files_config:
         logger.error("No files configuration provided for Navigo validations extraction.")
-        return
+        return pd.DataFrame()
 
+    all_validations = []
     failures = []
     for year, periods in files_config.items():
         try:
-            _process_year_data(year, periods, batch_size)
+            year_validations = _process_year_data(year, periods, batch_size)
+            if not year_validations.empty:
+                all_validations.append(year_validations)
         except Exception as e:
             logger.error(f"Failed to process year {year}: {str(e)}")
             failures.append(year)
 
     if failures:
         logger.warning(f"Failed to process data for years: {failures}")
-    else:
-        logger.info("Successfully processed all years")
+
+    if not all_validations:
+        logger.warning("No validations data was extracted")
+        return pd.DataFrame()
+
+    final_df = pd.concat(all_validations, ignore_index=True)
+    logger.info(f"Successfully extracted {len(final_df)} validation records")
+    return final_df
 
 
-def _process_year_data(year: int, periods: List[Union[str, Dict]], batch_size: int) -> None:
+def _process_year_data(year: int, periods: List[Union[str, Dict]], batch_size: int) -> pd.DataFrame:
+    all_period_validations = []
     for period in periods:
         if isinstance(period, str):
             # Simple period (e.g., "s1", "s2")
-            _process_period_data(year, period, batch_size)
+            period_df = _process_period_data(year, period, batch_size)
+            if not period_df.empty:
+                all_period_validations.append(period_df)
         elif isinstance(period, dict):
             # Complex period with sub-periods (e.g., {"s2": ["3", "4"]})
             for semester, trimesters in period.items():
                 for trimester in trimesters:
-                    _process_period_data(year, f"{semester}/{trimester}", batch_size)
+                    period_df = _process_period_data(year, f"{semester}/{trimester}", batch_size)
+                    if not period_df.empty:
+                        all_period_validations.append(period_df)
+
+    if not all_period_validations:
+        return pd.DataFrame()
+
+    return pd.concat(all_period_validations, ignore_index=True)
 
 
-def _process_period_data(year: int, period: str, batch_size: int) -> None:
+def _process_period_data(year: int, period: str, batch_size: int) -> pd.DataFrame:
     try:
         data_category = "validations_navigo"
         files = get_datalake_file(data_category, year, period)
 
         if len(files) < 2:
             logger.error(f"Missing files for period {year}/{period}")
-            return
+            return pd.DataFrame()
 
         validations_file, profiles_file = _find_file_types(files)
 
         if not validations_file or not profiles_file:
             logger.error(f"Could not identify validations and profiles files for {year}/{period}")
-            return
+            return pd.DataFrame()
 
         logger.info(f"Processing data for {year}/{period}")
 
@@ -81,7 +102,7 @@ def _process_period_data(year: int, period: str, batch_size: int) -> None:
             profiles_df = pd.read_csv(profiles_file, sep=";", parse_dates=False, encoding="latin1")
         except Exception as e:
             logger.error(f"Error loading profiles file: {str(e)}")
-            return
+            return pd.DataFrame()
 
         profiles_df.columns = _COLUMN_MAPPING["profils"]
         profiles_df = profiles_df.rename(columns={"cat_jour": "cat_day"})
@@ -90,6 +111,7 @@ def _process_period_data(year: int, period: str, batch_size: int) -> None:
         # Process validations data in batches to save memory
         chunks_processed = 0
         total_records = 0
+        all_chunks = []
 
         for validations_chunk in pd.read_csv(
             validations_file, sep=";", encoding="latin1", chunksize=batch_size, parse_dates=False
@@ -103,16 +125,22 @@ def _process_period_data(year: int, period: str, batch_size: int) -> None:
 
             hourly_validations = _compute_hourly_validations(validations_chunk, profiles_df)
             if not hourly_validations.empty:
-                insert_navigo_data(hourly_validations)
+                all_chunks.append(hourly_validations)
 
             logger.info(f"Chunk {chunks_processed} processed, {total_records} total records so far")
 
+        if not all_chunks:
+            return pd.DataFrame()
+
+        final_df = pd.concat(all_chunks, ignore_index=True)
         logger.info(
             f"Completed processing for {year}/{period} - {total_records} total records in {chunks_processed} chunks"
         )
+        return final_df
 
     except Exception as e:
         logger.error(f"Error processing {year}/{period}: {str(e)}")
+        return pd.DataFrame()
 
 
 def _find_file_types(files: List[str]) -> Tuple[str, str]:

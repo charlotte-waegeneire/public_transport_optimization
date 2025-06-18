@@ -8,7 +8,7 @@ from public_transport_watcher.utils import get_db_session
 
 
 def hash_password(password: str) -> str:
-    salt = bcrypt.gensalt(2)
+    salt = bcrypt.gensalt(12)
     hashed = bcrypt.hashpw(password.encode("utf-8"), salt)
     if isinstance(hashed, str):
         return hashed

@@ -42,7 +42,7 @@ def _fetch_api_data(line_id: str) -> dict:
         return None
 
 
-def _extract_traffic_data(data: dict) -> pd.DataFrame:
+def _extract_traffic_informations(data: dict) -> pd.DataFrame:
     """Extracts traffic data from API response"""
     line_names, line_refs, statuses, destinations, arrival_times = [], [], [], [], []
 
@@ -124,7 +124,7 @@ def _fetch_fresh_data() -> pd.DataFrame:
 
         api_data = _fetch_api_data(line_id)
         if api_data:
-            traffic_data = _extract_traffic_data(api_data)
+            traffic_data = _extract_traffic_informations(api_data)
             if not traffic_data.empty:
                 all_line_data.append(traffic_data)
 
@@ -163,7 +163,7 @@ def _fetch_fresh_data() -> pd.DataFrame:
     )
 
 
-def extract_traffic_data(force_refresh=False) -> pd.DataFrame:
+def extract_traffic_informations(force_refresh=False) -> pd.DataFrame:
     """
     Main function that manages cache and retrieves traffic data
 

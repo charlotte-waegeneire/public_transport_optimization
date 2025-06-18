@@ -8,7 +8,7 @@ from public_transport_watcher.utils import get_engine
 logger = get_logger()
 
 
-def insert_stations_informations(stations: pd.DataFrame, batch_size: int = 100) -> None:
+def insert_stations(stations: pd.DataFrame, batch_size: int = 1000) -> None:
     """
     Insert or update stations information into the database.
 

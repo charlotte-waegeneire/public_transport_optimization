@@ -1,12 +1,11 @@
 import pandas as pd
 
-from public_transport_watcher.extractor.insert import insert_addresses_informations
 from public_transport_watcher.logging_config import get_logger
 
 logger = get_logger()
 
 
-def extract_addresses_informations(batch_size: int = 1000) -> None:
+def extract_addresses_informations() -> pd.DataFrame:
     """
     Extract and process addresses information from a CSV file.
 
@@ -25,7 +24,7 @@ def extract_addresses_informations(batch_size: int = 1000) -> None:
     addresses_file = get_datalake_file("geography", "addresses")
     if not addresses_file:
         logger.error("No address file found in datalake")
-        return
+        return pd.DataFrame()
 
     addresses_file = addresses_file[0]
     logger.info(f"Processing addresses from file: {addresses_file}")
@@ -65,12 +64,13 @@ def extract_addresses_informations(batch_size: int = 1000) -> None:
 
         addresses_df = addresses_df.drop(columns=["N_SQ_AD", "N_VOIE", "C_SUF1", "C_SUF2", "C_SUF3", "L_ADR"])
 
-        logger.info(f"Inserting {len(addresses_df)} processed address records to database")
-        insert_addresses_informations(addresses_df, batch_size)
+        logger.info(f"Processed {len(addresses_df)} address records")
         logger.info("Address information extraction completed successfully")
+        return addresses_df
 
     except Exception as e:
         logger.error(f"Error processing addresses: {str(e)}")
+        return pd.DataFrame()
 
 
 def _extract_street_name(row: pd.Series) -> str:
